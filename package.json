@@ -18,6 +18,12 @@
     "svelte": "^3.0.0"
   },
   "dependencies": {
-    "sirv-cli": "^1.0.0"
+    "acorn": "^8.6.0",
+    "apca-w3": "0.0.98-g-4g.3",
+    "bufferutil": "^4.0.5",
+    "chroma-js": "^2.1.2",
+    "sirv-cli": "^1.0.0",
+    "terser": "^5.10.0",
+    "utf-8-validate": "^5.0.7"
   }
 }
