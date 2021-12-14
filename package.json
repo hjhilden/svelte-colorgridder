@@ -24,6 +24,7 @@
     "chroma-js": "^2.1.2",
     "sirv-cli": "^1.0.0",
     "terser": "^5.10.0",
-    "utf-8-validate": "^5.0.7"
+    "utf-8-validate": "^5.0.7",
+    "wcag-contrast": "^3.0.0"
   }
 }
