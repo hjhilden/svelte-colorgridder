@@ -8,9 +8,11 @@
 
 	import ColorMatrix from "../ColorMatrix.svelte"; 
 
-	let inputcolors = "#ffffb2, #fed976, #feb24c, #fd8d3c, #f03b20, #bd0026";
+	let defaultBgClr = '#ffffff'
+	let inputcolors
+	inputcolors = "#ffffb2, #fed976, #feb24c, #fd8d3c, #f03b20, #bd0026";
 	let colors = inputcolors.split(", ");
-	colors.push('#ffffff')
+	colors.push(defaultBgClr)
 	//let colors = ['#ffffb2','#fed976','#feb24c','#fd8d3c','#f03b20','#bd0026'];
 
 	let getContrastLc = (textColor, backgroundColor) => {
@@ -27,10 +29,10 @@
 		} else return "black";
 	};
 	let f = () => {
-		colors = ['#ffffff'];
+		colors = [defaultBgClr];
 		if (inputcolors.length > 0) {
 			colors = inputcolors.replaceAll("'", "").split(", ");
-			colors.push('#ffffff')
+			colors.push(defaultBgClr)
 		}
 		
 	};
@@ -58,6 +60,8 @@
 
 	function setColor(){
 		colors[index]=adjustedColor.hex("rgb");
+
+		inputcolors = colors.toString().replaceAll(',', ', ')
 
 	}
 
@@ -98,29 +102,60 @@
 		{ id: 90, text: `Preferred for body text` },
 	];
 
+	let contrastChoiceWCAG = [
+		{ id: 3, text: `AA large text, graphics` },
+		{ id: 4.5, text: `AA normal text, AAA large text` },
+		{ id: 7, text: `AAA normal text` },
+	];
+
 	let selected = contrastChoice[1]
 
-	let lcCutoff = selected.id
+	let selectedWCAG = contrastChoiceWCAG[0]
+
+	$: lcCutoff = selected.id
+	$: wcagCutoff = selectedWCAG.id
+
+	const markPassing = (contrastA, cutoffA, contrastB, cutoffB)=>{
+		let style = '2px solid white'
+		// A not B
+		if(Math.abs(contrastA) >= cutoffA & Math.abs(contrastB) < cutoffB){
+			style = '2px solid grey'
+		}
+		// B not A
+		if(Math.abs(contrastB) >= cutoffB & Math.abs(contrastA) < cutoffA){
+			style = '2px dashed grey'
+		}
+		// B and A
+		if(Math.abs(contrastA) >= cutoffA & Math.abs(contrastB) >= cutoffB){
+			style = '2px solid black'
+		}
+
+		return style
+	}
 
 </script>
 
 <main>
-	<div>
+	<div class="column">
 		<h2>Color value input</h2>
 		<input class="colorinput"
 			bind:value={inputcolors}
 			placeholder="input colors"
 			on:input={f}
+			on:change={f}
 		/>
+		<label>
+			Background color
+		<input	bind:value={defaultBgClr}
+		placeholder={defaultBgClr}
+		on:input={f}
+		on:change={f} style="background: {defaultBgClr}"
+	/>		</label>
+
 		<h2>Color contrast grid</h2>
-		<label><input type=checkbox bind:checked={showACPA}>
-		show ACPA contrast</label>
+		
 		<label>
-			<input type=checkbox bind:checked={showWCAG}>
-			show WCAG contrast
-		</label>
-		<label>
-			selected contrast level:
+			selected ACPA contrast level:
 		<select bind:value={selected} >
 			{#each contrastChoice as contrastValue, i}
 				<option value={contrastValue} >
@@ -128,6 +163,32 @@
 				</option>
 			{/each}
 		</select></label>
+		<label>
+			selected WCAG contrast level:
+		<select bind:value={selectedWCAG} >
+			{#each contrastChoiceWCAG as contrastValue, i}
+				<option value={contrastValue} >
+					1:{contrastValue.id} – {contrastValue.text}
+				</option>
+			{/each}
+		</select></label>
+
+		<div class="row" style="height:3em">
+			<div class="cell key" style="border:2px solid white; outline: 2px solid grey"></div>
+			<p>pair passes APCA level</p>
+			<div class="cell key" style="margin-left:1em; border:2px solid white; outline: 2px dashed grey"></div>
+			<p>pair passes WCAG level</p>
+			<div class="cell key" style="margin-left:1em; border:2px solid white; outline: 2px solid black"></div>
+			<p>pair passes both levels</p>
+
+		</div>
+		<label><input type=checkbox bind:checked={showACPA}>
+			show ACPA contrast value</label>
+			<label>
+				<input type=checkbox bind:checked={showWCAG}>
+				show WCAG contrast value
+			</label>
+
 		{#if colors.length > 0}
 			{#each colors as codeX, j}
 				<div class="row">
@@ -137,7 +198,7 @@
 							style="background-color:{codeX}; 
 			color:{invertTextColor('black', codeY)};
 			border:2px solid white;
-			outline:{(Math.abs(contrast[i][j].lC) > lcCutoff ? '2px solid black' : '2px solid white' )};
+			outline:{markPassing(contrast[i][j].lC, lcCutoff, contrast[i][j].cR, wcagCutoff)};
 			"
 						>
 							{#if codeX === codeY}
@@ -216,21 +277,23 @@
 			bind:value={selHcl.h}
 			min="0"
 			max={360.0}
+			step="0.1"
 		/>
 		</label>
 		<label class="colorslider">
 			Adjust chroma
 			<input type="range" bind:value={selHcl.c} min="0" max={150.0} />
-			<input type="number" bind:value={selHcl.c} min="0" max={150.0} 			/>
+			<input type="number" bind:value={selHcl.c} min="0" max={150.0} 
+			step="0.1"			/>
 		</label>
 		<label class="colorslider">
 			Adjust lightness
 			<input type="range" bind:value={selHcl.l} min="0" max={150.0} />
-			<input type="number" bind:value={selHcl.l} min="0" max={150.0} 			/>
+			<input type="number" bind:value={(selHcl.l)} min="0" max={150.0}  step="0.1"			/>
 		</label>
 
 		<button on:click={setColor}> set color {index}</button>
-
+<!-- 
 		<div class="row">
 			{#each ls as entry, i}
 				<div
@@ -243,7 +306,7 @@
 		</div>
 
 		<label class="colorslider">
-			Shift huezzz!
+			Shift huez!
 			<input type="range" bind:value={hueShift} min="0" max={360.0} />
 			<input type="number" bind:value={hueShift} min="0" max={360.0} 			/>
 		</label>
@@ -258,14 +321,21 @@
 				</div>
 			{/each}
 		</div>
-		<ColorMatrix></ColorMatrix>
+		<ColorMatrix></ColorMatrix> -->
 	</div>
 </main>
 
 <style>
+	
 	main {
 		display: flex;
 		justify-content: space-around;
+
+	}
+
+	.column{
+		background-color: white;
+		padding: 0 2em;
 	}
 
 	.row {
@@ -278,8 +348,8 @@
 	button {
 		margin: 0.25em;
 		text-align: center;
-		width: 4.5em;
-		min-width: 4em;
+		width: 4.8em;
+		min-width: 4.8em;
 		border-radius: 1em;
 		align-items: center;
 		justify-content: center;
@@ -304,6 +374,15 @@
 		flex-wrap: nowrap;
 		flex-direction: column;
 		font-size: 1rem;
+	}
+
+
+
+	.key {
+		width: 1.5em;
+		min-width: 1.5em;
+		height: 1.5em;
+		border-radius: 0.6em;
 	}
 	.inner {
 		margin: 0.5em;
