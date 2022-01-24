@@ -75,6 +75,7 @@
 
 	$: adjustedColor = chroma.hcl(selHcl.h, selHcl.c, selHcl.l);
 
+
 	$: adjustedTextColor = invertTextColor("black", adjustedColor.hex("rgb"));
 
 	$: index = "0";
@@ -261,6 +262,20 @@
 			>
 				{adjustedColor}
 			</div>
+			<div style="
+			padding-left:1em;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+		">
+			<div><i>hue, chroma, lightness</i>: [ {selHcl.h.toFixed(2)}, 
+			{selHcl.c.toFixed(2)}, {selHcl.l.toFixed(2)} ]</div>
+			<div><i>r, g b</i>:[ {adjustedColor.rgb()} ]</div>
+			{#if adjustedColor.clipped() ===true}
+			<b>clipped*</b>
+			{:else} displayable*
+			{/if}
+		</div>
 		</div>
 		<label class="colorslider">
 			Adjust hue
@@ -293,6 +308,8 @@
 		</label>
 
 		<button on:click={setColor}> set color {index}</button>
+		*) clipping colors may occur due to rounding
+
 <!-- 
 		<div class="row">
 			{#each ls as entry, i}
