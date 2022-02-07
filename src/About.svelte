@@ -1,0 +1,1 @@
+<div>This app uses <a href="https://gka.github.io/chroma.js/">chroma.js</a> and <a href="https://github.com/Myndex/apca-w3">APCA contrast algorithms</a> to analyze and generate color scales.</div>
