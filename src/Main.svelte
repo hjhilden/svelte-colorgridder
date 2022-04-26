@@ -4,15 +4,17 @@
 	import { APCAcontrast, sRGBtoY, displayP3toY, colorParsley } from "apca-w3";
 	import { hex } from "wcag-contrast";
 
-	import {shiftHue, getHcl} from "../scripts/utility.js"
+	import { shiftHue, getHcl, parseColorInput } from "../scripts/utility.js";
 
-	let defaultBgClr = '#ffffff'
-	let inputcolors
+	import ColorSelector from "./ColorSelector.svelte";
+	import { bubble, each } from "svelte/internal";
+
+	let defaultBgClr = "#ffffff";
+	let inputcolors;
 	inputcolors = "#ffffb2, #fed976, #feb24c, #fd8d3c, #f03b20, #bd0026";
-	let colors = inputcolors.split(", ");
-	colors.push(defaultBgClr)
+	let colors = parseColorInput(inputcolors, defaultBgClr)
 	//let colors = ['#ffffb2','#fed976','#feb24c','#fd8d3c','#f03b20','#bd0026'];
-
+	
 	let getContrastLc = (textColor, backgroundColor) => {
 		return APCAcontrast(
 			sRGBtoY(colorParsley(textColor)),
@@ -26,14 +28,56 @@
 			return "white";
 		} else return "black";
 	};
-	let f = () => {
-		colors = [defaultBgClr];
-		if (inputcolors.length > 0) {
-			colors = inputcolors.replaceAll("'", "").split(", ");
-			colors.push(defaultBgClr)
-		}
-		
+	
+
+
+	let updateColorInput = () => {
+		colors = []
+		colors = parseColorInput(inputcolors, defaultBgClr)
 	};
+	// lC APCA contrast, cR WCAG2
+
+	// reuse negative contrasts
+	let adjustContrast = (clrX, clrY) => {
+		let a, b;
+		if (getContrastLc(clrX, clrY) < 0) {
+			a = clrY;
+			b = clrX;
+		} else {
+			a = clrX;
+			b = clrY;
+		}
+
+		let adjustedClr = chroma(a);
+		let n = 0;
+		if (sRGBtoY(colorParsley(a)) > 0.25) {
+			while (
+				Math.abs(getContrastLc(adjustedClr.hex(), b) < 35) &
+				(n < 6)
+			) {
+				adjustedClr = adjustedClr.darken();
+				n += 1;
+			}
+		} else if (sRGBtoY(colorParsley(a)) < 0.25) {
+			while (
+				(Math.abs(getContrastLc(adjustedClr.hex(), b)) < 35) &
+				(n < 6)
+			) {
+				adjustedClr = adjustedClr.brighten();
+				n += 1;
+			}
+		}
+		console.log(adjustedClr.hex(), sRGBtoY(colorParsley(clrX)));
+		return adjustedClr.hex();
+	};
+
+	let strokes = [];
+
+	colors.forEach((clrX) => {
+		strokes.push(adjustContrast(clrX, "#fff"));
+	});
+
+	console.log(strokes);
 
 	let calculateContrast = (colors) => {
 		let contrast = [];
@@ -43,6 +87,8 @@
 				row.push({
 					lC: getContrastLc(clrX, clrY),
 					cR: hex(clrX, clrY).toFixed(2),
+					fill: clrX,
+					stroke: adjustContrast(clrX, clrY),
 				});
 			});
 			contrast.push(row);
@@ -50,20 +96,57 @@
 		return contrast;
 	};
 
+	// list color/stroke pairs (only one-way)
+	let colorStrokePairs = [];
 
+	if (contrast) {
+		contrast.forEach((entryX, i) => {
+			contrast.forEach((entryY, j) => {
+				console.log(entryX);
+				if (j >= i) {
+					colorStrokePairs.push({
+						fill: entryX.fill,
+						stroke: entryX.stroke,
+					});
+				}
+			});
+		});
+	}
+	console.log(colorStrokePairs);
 
-	function handleClick(){
-		index = this.id
+	function handleClick() {
+		index = this.id;
 	}
 
-	function setColor(){
-		colors[index]=adjustedColor.hex("rgb");
-
-		inputcolors = colors.toString().replaceAll(',', ', ')
-
+	function clickToCopy(){
+		const svgstring =this.querySelector("svg").outerHTML
+		setClipboard(svgstring)
 	}
 
-	
+
+	function setClipboard(text) {
+    var type = "text/plain";
+    var blob = new Blob([text], { type });
+    var data = [new ClipboardItem({ [type]: blob })];
+	var size = blob.size
+    navigator.clipboard.write(data).then(
+        function () {
+        /* success */
+		console.log(`copied svg to clipboard, ${size}kb`)
+        },
+        function () {
+        /* failure */
+        }
+    );
+}
+
+	function setColor() {
+		colors[index] = newSelectorColor.hex("rgb");
+
+		inputcolors = colors.toString().replaceAll(",", ", ");
+	}
+
+	let newSelectorColor;
 
 	$: contrast = calculateContrast(colors);
 
@@ -71,14 +154,14 @@
 
 	$: selHcl = getHcl(selectedColor);
 
-	$: adjustedColor = chroma.hcl(selHcl.h, selHcl.c, selHcl.l);
-
-
-	$: adjustedTextColor = invertTextColor("black", adjustedColor.hex("rgb"));
+	$: adjustedTextColor = invertTextColor(
+		"black",
+		newSelectorColor?.hex("rgb")
+	);
 
 	$: index = "0";
 
-	let hueShift = 180
+	let hueShift = 180;
 
 	let ls = ["a", "b", "c"];
 	let chromatest = chroma.scale(["white", "red"]).mode("lab");
@@ -88,9 +171,8 @@
 		colors[0].replace(" ", "")
 	);
 
-
-	let showACPA = true
-	let showWCAG = false
+	let showACPA = true;
+	let showWCAG = false;
 
 	let contrastChoice = [
 		{ id: 15, text: `Absolute minimum for non-text` },
@@ -107,86 +189,110 @@
 		{ id: 7, text: `AAA normal text` },
 	];
 
-	let selected = contrastChoice[1]
+	let selected = contrastChoice[1];
 
-	let selectedWCAG = contrastChoiceWCAG[0]
+	let selectedWCAG = contrastChoiceWCAG[0];
 
-	$: lcCutoff = selected.id
-	$: wcagCutoff = selectedWCAG.id
+	$: lcCutoff = selected.id;
+	$: wcagCutoff = selectedWCAG.id;
 
-	const markPassing = (contrastA, cutoffA, contrastB, cutoffB)=>{
-		let style = '2px solid white'
+	const markPassing = (contrastA, cutoffA, contrastB, cutoffB) => {
+		let style = "2px solid white";
 		// A not B
-		if(Math.abs(contrastA) >= cutoffA & Math.abs(contrastB) < cutoffB){
-			style = '2px solid grey'
+		if (
+			(Math.abs(contrastA) >= cutoffA) &
+			(Math.abs(contrastB) < cutoffB)
+		) {
+			style = "2px solid grey";
 		}
 		// B not A
-		if(Math.abs(contrastB) >= cutoffB & Math.abs(contrastA) < cutoffA){
-			style = '2px dashed grey'
+		if (
+			(Math.abs(contrastB) >= cutoffB) &
+			(Math.abs(contrastA) < cutoffA)
+		) {
+			style = "2px dashed grey";
 		}
 		// B and A
-		if(Math.abs(contrastA) >= cutoffA & Math.abs(contrastB) >= cutoffB){
-			style = '2px solid black'
+		if (
+			(Math.abs(contrastA) >= cutoffA) &
+			(Math.abs(contrastB) >= cutoffB)
+		) {
+			style = "2px solid black";
 		}
 
-		return style
-	}
-
+		return style;
+	};
 </script>
 
 <main>
 	<div class="column">
 		<h2>Color values input</h2>
-		<input class="colorinput"
+		<input
+			class="colorinput"
 			bind:value={inputcolors}
 			placeholder="input colors"
-			on:input={f}
-			on:change={f}
+			on:input={updateColorInput}
+			on:change={updateColorInput}
 		/>
 		<label>
 			Background color
-		<input	bind:value={defaultBgClr}
-		placeholder={defaultBgClr}
-		on:input={f}
-		on:change={f} style="background: {defaultBgClr}"
-	/>		</label>
+			<input
+				bind:value={defaultBgClr}
+				placeholder={defaultBgClr}
+				on:input={updateColorInput}
+				on:change={updateColorInput}
+				style="background: {defaultBgClr}"
+			/>
+		</label>
 
 		<h2>Color contrast grid</h2>
-		
+
 		<label>
 			selected ACPA contrast level:
-		<select bind:value={selected} >
-			{#each contrastChoice as contrastValue, i}
-				<option value={contrastValue} >
-					{contrastValue.id} – {contrastValue.text}
-				</option>
-			{/each}
-		</select></label>
+			<select bind:value={selected}>
+				{#each contrastChoice as contrastValue, i}
+					<option value={contrastValue}>
+						{contrastValue.id} – {contrastValue.text}
+					</option>
+				{/each}
+			</select></label
+		>
 		<label>
 			selected WCAG contrast level:
-		<select bind:value={selectedWCAG} >
-			{#each contrastChoiceWCAG as contrastValue, i}
-				<option value={contrastValue} >
-					1:{contrastValue.id} – {contrastValue.text}
-				</option>
-			{/each}
-		</select></label>
+			<select bind:value={selectedWCAG}>
+				{#each contrastChoiceWCAG as contrastValue, i}
+					<option value={contrastValue}>
+						1:{contrastValue.id} – {contrastValue.text}
+					</option>
+				{/each}
+			</select></label
+		>
 
 		<div class="row" style="height:3em">
-			<div class="cell key" style="border:2px solid white; outline: 2px solid grey"></div>
+			<div
+				class="cell key"
+				style="border:2px solid white; outline: 2px solid grey"
+			/>
 			<p>pair passes APCA level</p>
-			<div class="cell key" style="margin-left:1em; border:2px solid white; outline: 2px dashed grey"></div>
+			<div
+				class="cell key"
+				style="margin-left:1em; border:2px solid white; outline: 2px dashed grey"
+			/>
 			<p>pair passes WCAG level</p>
-			<div class="cell key" style="margin-left:1em; border:2px solid white; outline: 2px solid black"></div>
+			<div
+				class="cell key"
+				style="margin-left:1em; border:2px solid white; outline: 2px solid black"
+			/>
 			<p>pair passes both levels</p>
-
 		</div>
-		<label><input type=checkbox bind:checked={showACPA}>
-			show ACPA contrast value</label>
-			<label>
-				<input type=checkbox bind:checked={showWCAG}>
-				show WCAG contrast value
-			</label>
+		<label
+			><input type="checkbox" bind:checked={showACPA} />
+			show ACPA contrast value</label
+		>
+		<label>
+			<input type="checkbox" bind:checked={showWCAG} />
+			show WCAG contrast value
+		</label>
 
 		{#if colors.length > 0}
 			{#each colors as codeX, j}
@@ -197,7 +303,12 @@
 							style="background-color:{codeX}; 
 			color:{invertTextColor('black', codeY)};
 			border:2px solid white;
-			outline:{markPassing(contrast[i][j].lC, lcCutoff, contrast[i][j].cR, wcagCutoff)};
+			outline:{markPassing(
+								contrast[i][j].lC,
+								lcCutoff,
+								contrast[i][j].cR,
+								wcagCutoff
+							)};
 			"
 						>
 							{#if codeX === codeY}
@@ -208,27 +319,29 @@
 									style="background-color:{codeY}; color:{invertTextColor(
 										'black',
 										codeY
-									)}; 
+									)}; border: 2px solid {contrast[i][j]
+										.stroke};
 									"
 								>
 									<div class="scoreValue">
 										{#if codeX != codeY}
 											{#if showACPA}
-											{#if Math.abs(contrast[i][j].lC) > lcCutoff}
-												<strong
-													>{contrast[i][j].lC}</strong
-												>
-											{:else}
-												{contrast[i][j].lC}
+												{#if Math.abs(contrast[i][j].lC) > lcCutoff}
+													<strong
+														>{contrast[i][j]
+															.lC}</strong
+													>
+												{:else}
+													{contrast[i][j].lC}
+												{/if}
 											{/if}
-											{/if}
-											{#if showACPA && showWCAG }
-											<br />
-											——
-											<br />
+											{#if showACPA && showWCAG}
+												<br />
+												——
+												<br />
 											{/if}
 											{#if showWCAG}
-											{contrast[i][j].cR}
+												{contrast[i][j].cR}
 											{/if}
 										{/if}
 									</div>
@@ -239,121 +352,124 @@
 				</div>
 			{/each}
 		{/if}
-		<div class="spacer"></div>
+		<div class="spacer" />
 		{#each colors as codeX, j}
-		<button id={j.toString()} class:selected="{(index === j.toString())}" on:click={handleClick}  style="background-color:{codeX}">{codeX}</button>
+			<button
+				id={j.toString()}
+				class:selected={index === j.toString()}
+				on:click={handleClick}
+				style="background-color:{codeX}">{codeX}</button
+			>
 		{/each}
-		
-		<div class="colorpair">
-			<div
-				class="cell"
-				style="background-color:{selectedColor}; color:{invertTextColor(
-					'black',
-					selectedColor
-				)}"
-			>
-				{selectedColor}
-			</div>
-			<div
-				class="cell"
-				style="background-color:{adjustedColor}; color:{adjustedTextColor}"
-			>
-				{adjustedColor}
-			</div>
-			<div style="
+
+		<div class="two-cols">
+			<ColorSelector
+				bind:color={newSelectorColor}
+				hclColor={{ h: selHcl.h, c: selHcl.c, l: selHcl.l }}
+			/>
+			<div class="colordata">
+				<div class="colorblock">
+					<div
+						class="cell"
+						style="background-color:{selectedColor}; color:{invertTextColor(
+							'black',
+							selectedColor
+						)}"
+					>
+						{selectedColor}
+					</div>
+					<button
+						on:click={setColor}
+						class="cell"
+						style="background-color:{newSelectorColor}; color:{adjustedTextColor}"
+					>
+						<span style="font-size:0.7em">set color {index} </span>
+						{newSelectorColor}
+					</button>
+				</div>
+				<div
+					style="
 			padding-left:1em;
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
-		">
-			<div><i>hue, chroma, lightness</i>: [ {selHcl.h.toFixed(2)}, 
-			{selHcl.c.toFixed(2)}, {selHcl.l.toFixed(2)} ]</div>
-			<div><i>r, g b</i>:[ {adjustedColor.rgb()} ]</div>
-			{#if adjustedColor.clipped() ===true}
-			<b>clipped*</b>
-			{:else} displayable*
-			{/if}
-		</div>
-		</div>
-		<label class="colorslider">
-			Adjust hue
-			<input
-				type="range"
-				id="colorH"
-				bind:value={selHcl.h}
-				min="0"
-				max={360.0}
-			/>
-			<input
-			type="number"
-			id="colorH"
-			bind:value={selHcl.h}
-			min="0"
-			max={360.0}
-			step="0.1"
-		/>
-		</label>
-		<label class="colorslider">
-			Adjust chroma
-			<input type="range" bind:value={selHcl.c} min="0" max={150.0} />
-			<input type="number" bind:value={selHcl.c} min="0" max={150.0} 
-			step="0.1"			/>
-		</label>
-		<label class="colorslider">
-			Adjust lightness
-			<input type="range" bind:value={selHcl.l} min="0" max={150.0} />
-			<input type="number" bind:value={(selHcl.l)} min="0" max={150.0}  step="0.1"			/>
-		</label>
-
-		<button on:click={setColor}> set color {index}</button>
-		*) clipping colors may occur due to rounding
-
-<!-- 
-		<div class="row">
-			{#each ls as entry, i}
-				<div
-					class="cell"
-					style="background-color:{chromatest((i + 1) / 3.0)}"
+		"
 				>
-					{entry}
+					<div>
+						<i>hue, chroma, lightness</i>:
+						<input
+							onClick="this.select();"
+							value="[{[
+								selHcl.h.toFixed(2),
+								selHcl.c.toFixed(2),
+								selHcl.l.toFixed(2),
+							]}]"
+						/>
+					</div>
+					<div>
+						<i>r, g, b</i>:<br />
+						<input
+							onClick="this.select();"
+							value="[{newSelectorColor?.rgb()}]"
+						/>
+					</div>
+					{#if newSelectorColor?.clipped() === true}
+						<b>clipped*</b>
+					{:else}
+						displayable*
+					{/if}
 				</div>
-			{/each}
+			</div>
 		</div>
+		<div class="spacer" />
+		<div>*) clipping colors may occur due to rounding</div>
+		<div class="spacer" />
 
-		<label class="colorslider">
-			Shift huez!
-			<input type="range" bind:value={hueShift} min="0" max={360.0} />
-			<input type="number" bind:value={hueShift} min="0" max={360.0} 			/>
-		</label>
+		<div class="two-col">Click svg graphic to copy:
+		<div class="svg_container" style={`width:${colors.length*50}px`} on:click={clickToCopy}>
+			<svg>
+			{#each colors as pairx, j}
+				{#each colors as pairy, i}
+					{#if (j >= i) & (pairy != pairx) & (j - i == 1)}
+					<g transform={`translate(${j*50-50}, 0)`}>
 
-		<div class="row">
-			{#each colors as entry, i}
-				<div
-					class="cell"
-					style="background-color:{shiftHue(entry, hueShift)}"
-				>
-					{entry}
-				</div>
+						<rect x={0} y=0 width=40 height=40 rx=10
+							style="fill:{pairx};"
+						/>
+						<rect x={10} y=10 width=20 height=20 rx=30
+						style="fill:{pairy}; stroke:{contrast[i][j].stroke}; stroke-width:3px"
+					/>
+					<text x=0 y=50 font-size=9>stroke:</text>
+					<text x=0 y=60 font-size=9>{contrast[i][j].stroke}</text>
+
+					</g>
+					{/if}
+				{/each}
 			{/each}
-		</div>
-		<ColorMatrix></ColorMatrix> -->
+		</svg>
+		</div>		</div>
+
 	</div>
 </main>
 
 <style>
-	
-	.column{
-	background-color: white;
-	padding: 0 2em;
-}
+	.column {
+		background-color: white;
+		padding: 0 2em;
+	}
 
-.row {
-	display: flex;
-	height: 5em;
-}
+	.row {
+		display: flex;
+		height: 5em;
+	}
 
+	.two-cols {
+		display: flex;
+		flex-direction: row;
+		height: fit-content;
+	}
 
-	.spacer{
+	.spacer {
 		height: 2.5em;
 	}
 	button {
@@ -368,7 +484,7 @@
 		flex-direction: row;
 		font-size: 1rem;
 	}
-	button.selected{
+	button.selected {
 		border-width: 2px;
 		border-color: black;
 	}
@@ -387,8 +503,6 @@
 		font-size: 1rem;
 	}
 
-
-
 	.key {
 		width: 1.5em;
 		min-width: 1.5em;
@@ -404,11 +518,24 @@
 		line-height: 1em;
 		display: flex;
 		align-items: center;
-    text-align: center;
-    flex-direction: column;
-    justify-content: center;
+		text-align: center;
+		flex-direction: column;
+		justify-content: center;
+	}
+	.svg_container {
+		cursor: pointer;
+		padding: 0.5em;
+		border: 2px solid #fff;
+		height: 70px;
 	}
 
+	.svg_container:hover {
+		border: 2px solid rgb(240, 238, 238);
+	}
+
+	.svg_container:active {
+		border: 2px solid gray;
+	}
 
 	.colorinput {
 		width: 100%;
@@ -425,25 +552,31 @@
 		margin: 0 10px;
 	}
 
-	.colorslider input[type=number]{
-		width:4em;
+	.colorslider input[type="number"] {
+		width: 4em;
 	}
 
-	.colorslider input[type=range]{
-		width:50%;
+	.colorslider input[type="range"] {
+		width: 50%;
 	}
 
-	.colorpair {
+	.colordata {
 		display: flex;
-		height: 5rem;
+		width: 20rem;
+
+		flex-direction: column;
+	}
+	.colorblock {
+		flex-direction: row;
+		display: flex;
 	}
 
-	.colorpair :first-child {
+	.colorblock :first-child {
 		border-radius: 1em 0em 0em 1em;
 		margin-right: 2px;
 	}
 
-	.colorpair :last-child {
+	.colorblock :last-child {
 		border-radius: 0em 1em 1em 0em;
 		margin-left: 2px;
 	}

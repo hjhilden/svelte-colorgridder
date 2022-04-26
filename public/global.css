@@ -9,7 +9,7 @@ body {
 	margin: 0;
 	padding: 8px;
 	box-sizing: border-box;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-family: 'Andale Mono', monospace;
 		background-color: rgb(237, 241, 241);
 }
 
@@ -17,6 +17,14 @@ main {
 	display: flex;
 	justify-content: space-around;
 
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+		height: 5px;
 }
 
 
@@ -67,6 +75,8 @@ button:disabled {
 
 button:not(:disabled):active {
 	background-color: #ddd;
+	box-shadow:0px 0px 10px 50px #66666673 inset
+
 }
 
 button:focus {
