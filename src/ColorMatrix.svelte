@@ -2,18 +2,32 @@
     import chroma from "chroma-js";
 import { each } from "svelte/internal";
 
-    import { shiftHue, parseColorInput} from "../scripts/utility.js"
+import ColorSelector from "./ColorSelector.svelte";
+    import { shiftHue, parseColorInput, getHcl} from "../scripts/utility.js"
 
     export let colors;
     let shiftValue = 180;
     let colorseriesShifted;
-    let inputcolors = "#ffffb2, #fed976, #feb24c";
-    colors = parseColorInput(inputcolors)
+    let selHcl;
+    let index = "0";
+    let steps = 3;
+    let inputcolors = "#b7ffff, #4e6bcd";
+    $: index
+    let inputcolorsParsed = parseColorInput(inputcolors)
+    $: colors = chroma.scale(inputcolorsParsed)
+    .correctLightness().classes(steps).colors(steps)
 
     let updateColorInput = () => {
 		colors = []
-		colors = parseColorInput(inputcolors)
+		colors = chroma.scale(inputcolorsParsed)
+    .correctLightness().classes(steps).colors(steps)
+    console.log('update')
 	};
+
+    function setColorIndex() {
+		index = this.id;
+        selectedColor = inputcolorsParsed[index]
+	}
 
     function blendColorSeries(a, b) {
         let ab = [];
@@ -22,7 +36,7 @@ import { each } from "svelte/internal";
         for (let i = 0; i < a.length; i++) {
             const row = [];
             for (let j = 0; j < b.length; j++) {
-                console.log(a[i], b[j]);
+                // console.log(a[i], b[j]);
                 if ((i < 1) & (j < 1)) {
                     row.push(chroma.blend(a[i], b[j], "multiply"));
                 } else if (i < 1) {
@@ -41,16 +55,19 @@ import { each } from "svelte/internal";
     }
 
     function shiftColorSeries(colors, shiftValue){
-        console.log(colors)
         if (colors){
         let colorseriesShifted = colors.map((d) => {
         return shiftHue(d, shiftValue);
     });
     return colorseriesShifted;}
     }
+    let selectedColor = inputcolorsParsed[0]
+
 
     $: colorseriesShifted = shiftColorSeries(colors, shiftValue);
     $: ab = blendColorSeries(colors, colorseriesShifted);
+    $: selHcl = getHcl(selectedColor);
+
 
 </script>
 <main>
@@ -63,6 +80,25 @@ import { each } from "svelte/internal";
             on:input={updateColorInput}
 			on:change={updateColorInput}
 		/>
+        <input
+        type="number"
+        bind:value={steps}
+        on:input={updateColorInput}
+    />
+    {#each inputcolorsParsed as codeX, j}
+    <button
+        id={j.toString()}
+        class:selected={index === j.toString()}
+        on:click={setColorIndex}
+        style="background-color:{codeX}">{codeX}</button
+    >
+{/each}
+{inputcolorsParsed[index]}
+    <ColorSelector
+    bind:color={inputcolorsParsed[index]}
+    hclColor={selHcl}
+
+/>
 
 <label class="colorslider">
     Adjust offset angle

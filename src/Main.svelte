@@ -12,9 +12,9 @@
 	let defaultBgClr = "#ffffff";
 	let inputcolors;
 	inputcolors = "#ffffb2, #fed976, #feb24c, #fd8d3c, #f03b20, #bd0026";
-	let colors = parseColorInput(inputcolors, defaultBgClr)
+	let colors = parseColorInput(inputcolors, defaultBgClr);
 	//let colors = ['#ffffb2','#fed976','#feb24c','#fd8d3c','#f03b20','#bd0026'];
-	
+
 	let getContrastLc = (textColor, backgroundColor) => {
 		return APCAcontrast(
 			sRGBtoY(colorParsley(textColor)),
@@ -28,12 +28,10 @@
 			return "white";
 		} else return "black";
 	};
-	
-
 
 	let updateColorInput = () => {
-		colors = []
-		colors = parseColorInput(inputcolors, defaultBgClr)
+		colors = [];
+		colors = parseColorInput(inputcolors, defaultBgClr);
 	};
 	// lC APCA contrast, cR WCAG2
 
@@ -114,31 +112,30 @@
 	}
 	console.log(colorStrokePairs);
 
-	function handleClick() {
+	function setColorIndex() {
 		index = this.id;
 	}
 
-	function clickToCopy(){
-		const svgstring =this.querySelector("svg").outerHTML
-		setClipboard(svgstring)
+	function clickToCopy() {
+		const svgstring = this.querySelector("svg").outerHTML;
+		setClipboard(svgstring);
 	}
 
-
 	function setClipboard(text) {
-    var type = "text/plain";
-    var blob = new Blob([text], { type });
-    var data = [new ClipboardItem({ [type]: blob })];
-	var size = blob.size
-    navigator.clipboard.write(data).then(
-        function () {
-        /* success */
-		console.log(`copied svg to clipboard, ${size}kb`)
-        },
-        function () {
-        /* failure */
-        }
-    );
-}
+		var type = "text/plain";
+		var blob = new Blob([text], { type });
+		var data = [new ClipboardItem({ [type]: blob })];
+		var size = blob.size;
+		navigator.clipboard.write(data).then(
+			function () {
+				/* success */
+				console.log(`copied svg to clipboard, ${size}kb`);
+			},
+			function () {
+				/* failure */
+			}
+		);
+	}
 
 	function setColor() {
 		colors[index] = newSelectorColor.hex("rgb");
@@ -146,11 +143,13 @@
 		inputcolors = colors.toString().replaceAll(",", ", ");
 	}
 
-	let newSelectorColor;
+	let newSelectorColor, selectedColor;
 
 	$: contrast = calculateContrast(colors);
 
 	$: selectedColor = colors[index];
+
+	newSelectorColor = colors[index];
 
 	$: selHcl = getHcl(selectedColor);
 
@@ -160,16 +159,6 @@
 	);
 
 	$: index = "0";
-
-	let hueShift = 180;
-
-	let ls = ["a", "b", "c"];
-	let chromatest = chroma.scale(["white", "red"]).mode("lab");
-	// console.log(chromatest)
-	console.log(
-		hex(colors[0].replace(" ", ""), colors[1].replace(" ", "")),
-		colors[0].replace(" ", "")
-	);
 
 	let showACPA = true;
 	let showWCAG = false;
@@ -195,6 +184,11 @@
 
 	$: lcCutoff = selected.id;
 	$: wcagCutoff = selectedWCAG.id;
+
+	const checkPassing = (contrast, cutoff) =>{
+		if(Math.abs(contrast) >= cutoff) {return 'pass'}
+		else return 'fail'
+	}
 
 	const markPassing = (contrastA, cutoffA, contrastB, cutoffB) => {
 		let style = "2px solid white";
@@ -357,7 +351,7 @@
 			<button
 				id={j.toString()}
 				class:selected={index === j.toString()}
-				on:click={handleClick}
+				on:click={setColorIndex}
 				style="background-color:{codeX}">{codeX}</button
 			>
 		{/each}
@@ -425,30 +419,84 @@
 		<div>*) clipping colors may occur due to rounding</div>
 		<div class="spacer" />
 
-		<div class="two-col">Click svg graphic to copy:
-		<div class="svg_container" style={`width:${colors.length*50}px`} on:click={clickToCopy}>
-			<svg>
+		<div class="two-col">
+			Click svg graphics to copy:
+			<div
+				class="svg_container"
+				style={`width:${colors.length * 50}px`}
+				on:click={clickToCopy}
+			>Auto-adjusted strokes
+				<svg height="70">
+					{#each colors as pairx, j}
+						{#each colors as pairy, i}
+							{#if (j >= i) & (pairy != pairx) & (j - i == 1)}
+								<g transform={`translate(${j * 50-50}, 10)`}>
+									<rect
+										x={0}
+										y="0"
+										width="40"
+										height="40"
+										rx="10"
+										style="fill:{pairx};"
+									/>
+									<rect
+										x={10}
+										y="10"
+										width="20"
+										height="20"
+										rx="30"
+										style="fill:{pairy}; stroke:{contrast[
+											i
+										][j].stroke}; stroke-width:3px"
+									/>
+									<text x="0" y="50" font-size="9"
+										>stroke:</text
+									>
+									<text x="0" y="60" font-size="9"
+										>{contrast[i][j].stroke}</text
+									>
+								</g>
+							{/if}
+						{/each}
+					{/each}
+				</svg>
+			</div>
+			<div
+				class="svg_container"
+				style={`width:${colors.length * 50}px`}
+				on:click={clickToCopy}
+			>
+			Contrast to background
+			<svg height="100">
+				<text x="0" y="15" font-size="12"
+					>background: {colors[colors.length-1]}</text
+				>
 			{#each colors as pairx, j}
-				{#each colors as pairy, i}
-					{#if (j >= i) & (pairy != pairx) & (j - i == 1)}
-					<g transform={`translate(${j*50-50}, 0)`}>
+			<g transform={`translate(${j * 50 }, 30)`}>
+				<rect
+					x={0}
+					y="0"
+					width="40"
+					height="40"
+					rx="10"
+					style="fill:{pairx};"
+				/>
+				<text x="0" y="-5" font-size="9"
+					>{pairx}</text
+				>
 
-						<rect x={0} y=0 width=40 height=40 rx=10
-							style="fill:{pairx};"
-						/>
-						<rect x={10} y=10 width=20 height=20 rx=30
-						style="fill:{pairy}; stroke:{contrast[i][j].stroke}; stroke-width:3px"
-					/>
-					<text x=0 y=50 font-size=9>stroke:</text>
-					<text x=0 y=60 font-size=9>{contrast[i][j].stroke}</text>
-
-					</g>
-					{/if}
-				{/each}
+				<text x="0" y="50" font-size="9"
+					>{checkPassing(contrast[colors.length-1][j].cR, wcagCutoff)}</text
+				>
+				<text x="0" y="60" font-size="9"
+					>{contrast[colors.length-1][j].cR} </text
+				>
+			</g>
 			{/each}
-		</svg>
-		</div>		</div>
-
+			</svg>
+		
+		</div>
+		</div>
 	</div>
 </main>
 
@@ -526,7 +574,11 @@
 		cursor: pointer;
 		padding: 0.5em;
 		border: 2px solid #fff;
-		height: 70px;
+		height: auto;
+		width:auto;
+		display: flex;
+    flex-direction: column;
+
 	}
 
 	.svg_container:hover {

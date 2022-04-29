@@ -1,18 +1,42 @@
 <script>
 	
 	import chroma from 'chroma-js'
-	import { onMount, afterUpdate } from 'svelte';
+	import { onMount, afterUpdate, beforeUpdate } from 'svelte';
 
-	export let hclColor = {h:100, c:33, l:56} // input initial color
+	export let hclColor // optional input initial color as hcl
 
 	export	let width = 480;
 	export let height = 50;
-	export let color;	
+	export let color = '#ffb';	
 	let h, c, l;
 			let canvas;
+	
+	if(hclColor === undefined)	{hclColor = getHcl(color);}// 
+
 	$: ({h, c, l} = hclColor);
 	$: color = chroma.hcl(h, c,l)
  // nb! binds must refer to object internals (hclColor.h), not unpacked values (h) 
+	
+	// weird async (?) workaround as color  
+	// is interpreted as hex color instead of chroma color after input color change
+	const getClipped = (color) => { 
+		if (color.clipped) {return color.clipped()}
+		else {return chroma(color).clipped()}
+	}
+	
+ function getHcl(color) {
+    let h, c, l;
+    [h, c, l] = chroma(color).hcl();
+    return { h: h, c: c, l: l };
+};
+
+beforeUpdate(() => {
+	if (typeof color !== 'object'){
+		console.log(color)
+
+		hclColor = getHcl(color)}
+		
+	});
 	
 	onMount(() => {
 					drawColorScale()
@@ -54,7 +78,7 @@
 ></canvas>
 <label >
 	H
-	<input type=range bind:value={hclColor.h} min=0 max=360 style='background-color:{color.hex()}'>
+	<input type=range bind:value={hclColor.h} min=0 max=360 style='background-color:{color}'>
 </label>
 <label>
 	C
@@ -63,11 +87,12 @@
 
 <label>
 	L
-	<input type=range bind:value={hclColor.l} min=0 max=100 onchange={drawColorScale}>
+	<input type=range bind:value={hclColor.l} min=0 max=100 >
 </label>
-<div>H:{h} C:{c} L:{l}</div>
-<div style='border-top:{color.hex()} 4px solid'>
-	{color.hex()} <span class='note'>{color.clipped() ? 'clipped!':''}</span>
+<div>H:{h.toFixed(2)} C:{c.toFixed(2)} L:{l.toFixed(2)}</div>
+<div style='border-top:{color} 4px solid'>
+	{color} 
+	<span class='note'>{getClipped(color) ? 'clipped!':''}</span>
 	</div>
 </div>
 
