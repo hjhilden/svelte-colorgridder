@@ -11,9 +11,10 @@
 
 	let defaultBgClr = "#ffffff";
 	let inputcolors;
-	inputcolors = "#ffffb2, #fed976, #feb24c, #fd8d3c, #f03b20, #bd0026";
-	let colors = parseColorInput(inputcolors, defaultBgClr);
-	//let colors = ['#ffffb2','#fed976','#feb24c','#fd8d3c','#f03b20','#bd0026'];
+	inputcolors = window.location.hash;
+	if (inputcolors === "") {
+		inputcolors = "#ffffb2, #fed976, #feb24c, #fd8d3c, #f03b20, #bd0026";
+	}
 
 	let getContrastLc = (textColor, backgroundColor) => {
 		return APCAcontrast(
@@ -29,9 +30,18 @@
 		} else return "black";
 	};
 
+	const setAddress = (colors) => {
+		history.pushState(
+			colors,
+			"",
+			colors.slice(0, colors.length - 1).join(",")
+		);
+	};
+
 	let updateColorInput = () => {
 		colors = [];
 		colors = parseColorInput(inputcolors, defaultBgClr);
+		setAddress(colors);
 	};
 	// lC APCA contrast, cR WCAG2
 
@@ -68,6 +78,9 @@
 		console.log(adjustedClr.hex(), sRGBtoY(colorParsley(clrX)));
 		return adjustedClr.hex();
 	};
+
+	let colors = parseColorInput(inputcolors, defaultBgClr);
+	setAddress(colors);
 
 	let strokes = [];
 
@@ -141,6 +154,7 @@
 		colors[index] = newSelectorColor.hex("rgb");
 
 		inputcolors = colors.toString().replaceAll(",", ", ");
+		setAddress(colors);
 	}
 
 	let newSelectorColor, selectedColor;
@@ -185,9 +199,18 @@
 	$: lcCutoff = selected.id;
 	$: wcagCutoff = selectedWCAG.id;
 
-	const checkPassing = (contrast, cutoff) =>{
-		if(Math.abs(contrast) >= cutoff) {return 'pass'}
-		else return 'fail'
+	const checkPassing = (contrast, cutoff) => {
+		if (Math.abs(contrast) >= cutoff) {
+			return "pass";
+		} else return "fail";
+	};
+
+	const chooseEval = (condA, condB, exprA, exprB) => {
+
+		if (condA & condB) return (exprA & exprB)
+		else if (condA) return (exprA)
+		else return exprB 
+
 	}
 
 	const markPassing = (contrastA, cutoffA, contrastB, cutoffB) => {
@@ -240,7 +263,7 @@
 		</label>
 
 		<h2>Color contrast grid</h2>
-
+<div class='settings'>
 		<label>
 			selected ACPA contrast level:
 			<select bind:value={selected}>
@@ -262,6 +285,15 @@
 			</select></label
 		>
 
+		<label
+		><input type="checkbox" bind:checked={showACPA} />
+		show ACPA contrast value</label
+	>
+	<label>
+		<input type="checkbox" bind:checked={showWCAG} />
+		show WCAG contrast value
+	</label>
+	</div>
 		<div class="row" style="height:3em">
 			<div
 				class="cell key"
@@ -279,14 +311,7 @@
 			/>
 			<p>pair passes both levels</p>
 		</div>
-		<label
-			><input type="checkbox" bind:checked={showACPA} />
-			show ACPA contrast value</label
-		>
-		<label>
-			<input type="checkbox" bind:checked={showWCAG} />
-			show WCAG contrast value
-		</label>
+
 
 		{#if colors.length > 0}
 			{#each colors as codeX, j}
@@ -313,8 +338,7 @@
 									style="background-color:{codeY}; color:{invertTextColor(
 										'black',
 										codeY
-									)}; border: 2px solid {contrast[i][j]
-										.stroke};
+									)}; 
 									"
 								>
 									<div class="scoreValue">
@@ -425,12 +449,13 @@
 				class="svg_container"
 				style={`width:${colors.length * 50}px`}
 				on:click={clickToCopy}
-			>Auto-adjusted strokes
+			>
+				Auto-adjusted strokes
 				<svg height="70">
 					{#each colors as pairx, j}
 						{#each colors as pairy, i}
 							{#if (j >= i) & (pairy != pairx) & (j - i == 1)}
-								<g transform={`translate(${j * 50-50}, 10)`}>
+								<g transform={`translate(${j * 50 - 50}, 10)`}>
 									<rect
 										x={0}
 										y="0"
@@ -466,36 +491,122 @@
 				style={`width:${colors.length * 50}px`}
 				on:click={clickToCopy}
 			>
-			Contrast to background
-			<svg height="100">
-				<text x="0" y="15" font-size="12"
-					>background: {colors[colors.length-1]}</text
-				>
-			{#each colors as pairx, j}
-			<g transform={`translate(${j * 50 }, 30)`}>
-				<rect
-					x={0}
-					y="0"
-					width="40"
-					height="40"
-					rx="10"
-					style="fill:{pairx};"
-				/>
-				<text x="0" y="-5" font-size="9"
-					>{pairx}</text
-				>
+				Contrast to background
+				<svg height="100">
+					<text x="0" y="15" font-size="12"
+						>background: {colors[colors.length - 1]}</text
+					>
+					{#each colors as colorX, j}
+						<g transform={`translate(${j * 50}, 30)`}>
+							<rect
+								x={0}
+								y="0"
+								width="40"
+								height="40"
+								rx="10"
+								style="fill:{colorX};"
+							/>
+							<text x="0" y="-5" font-size="9">{colorX}</text>
 
-				<text x="0" y="50" font-size="9"
-					>{checkPassing(contrast[colors.length-1][j].cR, wcagCutoff)}</text
-				>
-				<text x="0" y="60" font-size="9"
-					>{contrast[colors.length-1][j].cR} </text
-				>
-			</g>
-			{/each}
-			</svg>
-		
-		</div>
+							<text x="0" y="50" font-size="9"
+								>{checkPassing(
+									contrast[colors.length - 1][j].cR,
+									wcagCutoff
+								)}</text
+							>
+							<text x="0" y="60" font-size="9"
+								>{contrast[colors.length - 1][j].cR}
+							</text>
+						</g>
+					{/each}
+				</svg>
+			</div>
+			<div
+				class="svg_container"
+				style={`width:${colors.length * 50 + 30}px`}
+				on:click={clickToCopy}
+			>
+				Color pairings: passing combinations
+				<svg height={colors.length * 50 + 30}>
+
+					{#if showACPA}
+					<text x="0" y="15" font-size="9">
+						APCA: {selected.text} – {lcCutoff}
+					</text>
+					{/if}
+					{#if showWCAG}
+					<text x="0" y="25" font-size="9">
+						WCAG: {selectedWCAG.text} – 1:{wcagCutoff}
+					</text>
+					{/if}
+
+
+					{#each colors as codeX, j}
+						{#each colors as codeY, i}
+							<g
+								transform={`translate(${j * 50}, ${
+									i * 50 + 30
+								})`}
+							>
+								{#if codeY != codeX}
+									{#if chooseEval(showACPA, showWCAG, Math.abs(contrast[i][j].lC) >= lcCutoff, Math.abs(contrast[i][j].cR) >= wcagCutoff )}
+										<rect
+											x={0}
+											y="0"
+											width="40"
+											height="40"
+											rx="10"
+											style="fill:{codeX};"
+										/>
+										<rect
+											x={10}
+											y="10"
+											width="20"
+											height="20"
+											rx="30"
+											style="fill:{codeY};"
+										/>{:else}
+										<rect
+											x={0}
+											y="0"
+											width="40"
+											height="40"
+											rx="10"
+											style="fill:none; stroke:{'#999'}; stroke-width:1px"
+										/>
+										<line
+											x1={2.5}
+											y1={2.5}
+											x2={40 - 2.5}
+											y2={40 - 2.5}
+											style="stroke:{'#999'}; stroke-width:1px"
+										/>
+									{/if}
+								{:else}
+									<rect
+										x={0}
+										y="0"
+										width="40"
+										height="40"
+										rx="10"
+										style="fill:{codeX};"
+									/>
+									<text
+										x="0"
+										y="22.5"
+										font-size="9"
+										style="fill:{invertTextColor(
+											'black',
+											codeX
+										)}">{codeX}</text
+									>
+								{/if}
+
+							</g>
+						{/each}
+					{/each}
+				</svg>
+			</div>
 		</div>
 	</div>
 </main>
@@ -570,15 +681,20 @@
 		flex-direction: column;
 		justify-content: center;
 	}
+	.settings {
+		position: sticky;
+		top: 0em; 
+				background-color: #fff;
+	}
+
 	.svg_container {
 		cursor: pointer;
 		padding: 0.5em;
 		border: 2px solid #fff;
 		height: auto;
-		width:auto;
+		width: auto;
 		display: flex;
-    flex-direction: column;
-
+		flex-direction: column;
 	}
 
 	.svg_container:hover {
