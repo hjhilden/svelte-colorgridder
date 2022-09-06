@@ -1,9 +1,43 @@
 import chroma from "chroma-js";
 
-export function shiftHue(color, hShift=180){
+import { APCAcontrast, sRGBtoY, colorParsley } from "apca-w3";
+
+
+function clamp (x, min, max) {
+    return Math.min(Math.max(x, min), max)
+}
+
+function wrap (x, min, max) {
+    let range = max-min
+    let mod = x % range
+    return mod + min
+
+}
+
+export const getContrastLc = (textColor, backgroundColor) => {
+    return APCAcontrast(
+        sRGBtoY(colorParsley(textColor)),
+        sRGBtoY(colorParsley(backgroundColor))
+    );
+};
+
+export const  invertTextColor = (textColor, backgroundColor) => {
+    let Lc = getContrastLc(textColor, backgroundColor);
+    if (Lc < 45) {
+        return "white";
+    } else return "black";
+};
+
+export function shiftHcl(color, hShift=180, cShift=0, lShift=0){
     const hclClr = getHcl(color)
-    let hue = (hclClr.h + hShift<360 ? hclClr.h + hShift : 0+ ((hclClr.h + hShift)-360)) 
-    return chroma.hcl(hue, hclClr.c, hclClr.l).hex("rgb");
+    let hue = wrap(hclClr.h + hShift, 0, 360)
+    let c = clamp(hclClr.c + cShift, 0, 100)
+    let l = clamp(hclClr.l + lShift, 0, 100)
+    console.log('input')
+    console.table(hclClr)
+    console.log('output')
+    console.table(hue, c, l)
+    return chroma.hcl(hue, c, l).hex("rgb");
 
 }
 
@@ -31,4 +65,27 @@ export let parseColorInput = (inputcolors, bgColor) => {
    
     }
     return colors;
+}
+
+export function clickToCopy() {
+    console.log("copyString")
+
+    const copyString = this.querySelector("div").outerHTML;
+    // setClipboard(copyString);
+}
+
+export function setClipboard(text) {
+    var type = "text/plain";
+    var blob = new Blob([text], { type });
+    var data = [new ClipboardItem({ [type]: blob })];
+    var size = blob.size;
+    navigator.clipboard.write(data).then(
+        function () {
+            /* success */
+            console.log(`copied to clipboard, ${size}kb`);
+        },
+        function () {
+            /* failure */
+        }
+    );
 }

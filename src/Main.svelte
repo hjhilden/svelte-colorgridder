@@ -4,37 +4,32 @@
 	import { APCAcontrast, sRGBtoY, displayP3toY, colorParsley } from "apca-w3";
 	import { hex } from "wcag-contrast";
 
-	import { shiftHue, getHcl, parseColorInput } from "../scripts/utility.js";
+	import { getHcl, parseColorInput, invertTextColor, getContrastLc } from "../scripts/utility.js";
 
 	import ColorSelector from "./ColorSelector.svelte";
 	import { bubble, each } from "svelte/internal";
 
 	let defaultBgClr = "#ffffff";
-	let inputcolors;
-	inputcolors = window.location.hash;
+	let inputcolors ="";
+	let hash = window.location.hash
+	let primaryHash
+	if ( hash.split('|').length>1){
+			primaryHash = hash.split('|')[0]
+			inputcolors = hash.split('|')[1]
+		} else primaryHash = '#main'
+	// inputcolors = window.location.hash
+
 	if (inputcolors === "") {
 		inputcolors = "#ffffb2, #fed976, #feb24c, #fd8d3c, #f03b20, #bd0026";
 	}
 
-	let getContrastLc = (textColor, backgroundColor) => {
-		return APCAcontrast(
-			sRGBtoY(colorParsley(textColor)),
-			sRGBtoY(colorParsley(backgroundColor))
-		);
-	};
 
-	let invertTextColor = (textColor, backgroundColor) => {
-		let Lc = getContrastLc(textColor, backgroundColor);
-		if (Lc < 45) {
-			return "white";
-		} else return "black";
-	};
 
 	const setAddress = (colors) => {
 		history.pushState(
 			colors,
 			"",
-			colors.slice(0, colors.length - 1).join(",")
+			primaryHash + '|' + colors.slice(0, colors.length - 1).join(",")
 		);
 	};
 
