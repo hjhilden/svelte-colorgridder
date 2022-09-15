@@ -2,24 +2,27 @@
     import chroma from "chroma-js";
     import { each } from "svelte/internal";
 
+    import {scaleLinear} from "d3/node_modules/d3-scale"
+
     import ColorSelector from "./ColorSelector.svelte";
     import ColorChart from "./ColorChart.svelte";
+    import HueChart from "./HueChart.svelte";
+    import DemoMap from "./DemoMap.svelte";
+
     import {
+        clamp,
         shiftHcl,
         parseColorInput,
         getHcl,
         invertTextColor,
-        setClipboard
-        
+        setClipboard,
     } from "../scripts/utility.js";
     import { colorParsley } from "apca-w3";
 
-
     function clickToCopy() {
-     const copyString = this.parentElement.querySelector('textarea').value;
-    setClipboard(copyString);
-
-}
+        const copyString = this.parentElement.querySelector("textarea").value;
+        setClipboard(copyString);
+    }
 
     export let colors;
 
@@ -34,7 +37,7 @@
     let index = "0";
     let steps = 3;
     const paletteSize = 200;
-    const paletteMargin = 45;
+    const paletteMargin = 55;
 
     const diffPaletteSize = 300;
 
@@ -65,14 +68,25 @@
         selectedColor = inputcolorsParsed[index];
     }
 
-    const formatColorSeries = (colorSeries) =>{
-       return `[${colorSeries.map((d) => {
-                                return `"${d.color}"`;
-                            }).join(', ')}]`
+    const formatColorSeries = (colorSeries, target = "js") => {
 
-    }
+        if (target === "js") {
+            return `[${colorSeries
+                .map((d) => {
+                    return `"${d.color}"`;
+                })
+                .join(", ")}]`;
+        }
+        if (target === "biscale") {
+            return`c(\n${colorSeries
+                .map((d) => {
+                    return `   "${d.key}" = "${d.color}"`;
+                })
+                .join(",\n")}\n)`;
+        }
+    };
 
-    function blendColorSeriesAlt(a, b, mode = blendingMode) {
+    function blendColorSeriesAlt(a, b, mode = blendingMode, mix=true) {
         const scale1 = a;
         const scale2 = b;
 
@@ -80,10 +94,15 @@
         if ((scale2 != undefined) & (scale1?.length === scale2?.length)) {
             for (let i = 0; i < steps; i++) {
                 for (let j = 0; j < steps; j++) {
+                    let color
+
+                        if(mix) {color=chroma.mix(scale1[i], scale2[j], clamp(0.5-0.5*(i-j), 0, 1), 'lab').darken((i*j)*0.44, 'lab')}
+
+                        else color=chroma.blend(scale1[i], scale2[j], mode)
                     data[i * steps + j] = {
-                        color: chroma.blend(scale1[i], scale2[j], mode),
-                        x: (i * 200) / steps,
-                        y: (j * 200) / steps,
+                        color: color,
+                        x: 125+(-i * 200) / steps,
+                        y: 125+(-j * 200) / steps,
                         key: `${i + 1}-${j + 1}`,
                     };
                 }
@@ -166,6 +185,12 @@
         colorseriesShifted,
         "darken"
     );
+    
+    // plain color series array
+    $: colorSeriesMcolors = altColorSeriesM.map((d) => {
+                                    return d.color;
+                                })
+
 </script>
 
 <main>
@@ -185,7 +210,7 @@
                 bind:value={steps}
                 on:input={updateColorInput}
                 min="2"
-                max={5}
+                max={4}
             />
         </label>
         {#each inputcolorsParsed as codeX, j}
@@ -266,7 +291,7 @@
         <label class="colorslider">
             Adjust delta E cutoff
             <input
-                type="range"
+                type="number"
                 id="deltaE"
                 bind:value={deltaECutoff}
                 min={1.0}
@@ -281,153 +306,184 @@
 
                 <div style="display: flex">
                     <div>
-                        Mode: multiply
-                        <svg
-                            width={paletteSize + paletteMargin * 2}
-                            height={paletteSize + paletteMargin * 2}
-                        >
-                            <g
-                                transform={"rotate(45)"}
-                                transform-origin={"center center"}
+                        <div class="defaultBlock">
+                            Mode: multiply
+                            <svg
+                                width={paletteSize + paletteMargin * 2}
+                                height={paletteSize + paletteMargin * 2}
                             >
-                                {#each altColorSeriesM as entry}
-                                    <rect
-                                        fill={entry.color}
-                                        x={entry.x + paletteMargin}
-                                        y={entry.y + paletteMargin}
-                                        width={paletteSize / steps}
-                                        height={paletteSize / steps}
-                                    />
-                                    <g
-                                        transform={`translate(${
-                                            entry.x +
-                                            paletteMargin +
-                                            paletteSize / steps / 2
-                                        }, ${
-                                            entry.y +
-                                            paletteMargin +
-                                            paletteSize / steps / 2
-                                        }) rotate(-45)`}
-                                    >
-                                        <text
-                                            fill={invertTextColor(
-                                                "black",
-                                                chroma(entry.color).hex("rgb")
-                                            )}
-                                            text-anchor="middle"
-                                            x={0}
-                                            y={5}
-                                        >
-                                            {entry.key}
-                                        </text>
-                                    </g>
-                                {/each}
-                            </g>
-                        </svg>
-                        <p>
-                            Pairs with tag corner have Delta E distance below {deltaECutoff}
-                        </p>
-                        <svg
-                            width={diffPaletteSize + paletteMargin * 2}
-                            height={diffPaletteSize + paletteMargin * 2}
-                        >
-                            <g>
-                                {#each altColorSeriesM as entryX, i}
-                                    {#each altColorSeriesM as entryY, j}
+                                <g
+                                    transform={"rotate(45)"}
+                                    transform-origin={"center center"}
+                                >
+                                    {#each altColorSeriesM as entry}
+                                        <rect
+                                            fill={entry.color}
+                                            x={entry.x + paletteMargin}
+                                            y={entry.y + paletteMargin}
+                                            width={paletteSize / steps}
+                                            height={paletteSize / steps}
+                                        />
                                         <g
                                             transform={`translate(${
-                                                (j * diffPaletteSize) /
-                                                (steps * steps)
+                                                entry.x +
+                                                paletteMargin +
+                                                paletteSize / steps / 2
                                             }, ${
-                                                (i * diffPaletteSize) /
-                                                (steps * steps)
-                                            })`}
+                                                entry.y +
+                                                paletteMargin +
+                                                paletteSize / steps / 2
+                                            }) rotate(-45)`}
                                         >
-                                            <rect
-                                                fill={entryX.color}
+                                            <text
+                                                fill={invertTextColor(
+                                                    "black",
+                                                    chroma(entry.color).hex(
+                                                        "rgb"
+                                                    )
+                                                )}
+                                                text-anchor="middle"
                                                 x={0}
-                                                y={0}
-                                                width={diffPaletteSize /
-                                                    (steps * steps)}
-                                                height={diffPaletteSize /
-                                                    (steps * steps)}
-                                            />
-                                            <rect
-                                                x={diffPaletteSize /
-                                                    (steps * steps) /
-                                                    4}
-                                                y={diffPaletteSize /
-                                                    (steps * steps) /
-                                                    4}
-                                                width={diffPaletteSize /
-                                                    (steps * steps) /
-                                                    2}
-                                                height={diffPaletteSize /
-                                                    (steps * steps) /
-                                                    2}
-                                                rx="30"
-                                                style="fill:{entryY.color};"
-                                            />
-                                            {#if (chroma.distance(entryX.color, entryY.color) < deltaECutoff) & (entryX.color !== entryY.color)}
-                                                <polygon
-                                                    points={`0,0 0,${
-                                                        diffPaletteSize /
-                                                        (steps * steps) /
-                                                        4
-                                                    } ${
-                                                        diffPaletteSize /
-                                                        (steps * steps) /
-                                                        4
-                                                    }, 0`}
-                                                    style="fill:#fff"
-                                                />
-                                            {/if}
+                                                y={5}
+                                            >
+                                                {entry.key}
+                                            </text>
                                         </g>
                                     {/each}
-                                {/each}
-                            </g>
-                        </svg>
-                        <ColorChart
-                            colors={altColorSeriesM.map((d) => {
-                                return d.color;
-                            })}
-                            xTicks={altColorSeriesM.map((d) => {
-                                return d.key;
-                            })}
-                        />
-                        <div>
-                        <button on:click="{clickToCopy}">Copy</button>
-                        <textarea
-                        style="height:auto"
-                        cols="32"
-                        rows=8
-                            type="text"
-                            value={formatColorSeries(altColorSeriesM)}
-                        />
-                    </div>
-                    </div>
-                    <div>
-                        Mode: darken
-                        <svg
-                            width={paletteSize + paletteMargin * 2}
-                            height={paletteSize + paletteMargin * 2}
-                        >
-                            <g
-                                transform={"rotate(45)"}
-                                transform-origin={"center center"}
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="defaultBlock">
+                            Mode: darken
+                            <svg
+                                width={paletteSize/2 + paletteMargin * 2}
+                                height={paletteSize/2 + paletteMargin * 2}
                             >
-                                {#each altColorSeriesD as entry}
-                                    <rect
-                                        fill={entry.color}
-                                        x={entry.x + paletteMargin}
-                                        y={entry.y + paletteMargin}
-                                        width={paletteSize / steps}
-                                        height={paletteSize / steps}
-                                    />
-                                {/each}
-                            </g>
-                        </svg>
+                                <g
+                                    transform={"rotate(45), scale(0.5)"}
+                                    transform-origin={"center center"}
+                                >
+                                    {#each altColorSeriesD as entry}
+                                        <rect
+                                            fill={entry.color}
+                                            x={entry.x + paletteMargin}
+                                            y={entry.y + paletteMargin}
+                                            width={paletteSize / steps}
+                                            height={paletteSize / steps}
+                                        />
+                                    {/each}
+                                </g>
+                            </svg>
+                        </div>
+                        <div>
+                            <p>
+                                Pairs with tag corner have Delta E distance
+                                below {deltaECutoff}
+                            </p>
+                            <svg
+                                width={diffPaletteSize + paletteMargin * 2}
+                                height={diffPaletteSize + paletteMargin * 2}
+                            >
+                                <g>
+                                    {#each altColorSeriesM as entryX, i}
+                                        {#each altColorSeriesM as entryY, j}
+                                            <g
+                                                transform={`translate(${
+                                                    (j * diffPaletteSize) /
+                                                    (steps * steps)
+                                                }, ${
+                                                    (i * diffPaletteSize) /
+                                                    (steps * steps)
+                                                })`}
+                                            >
+                                                <rect
+                                                    fill={entryX.color}
+                                                    x={0}
+                                                    y={0}
+                                                    width={diffPaletteSize /
+                                                        (steps * steps)}
+                                                    height={diffPaletteSize /
+                                                        (steps * steps)}
+                                                />
+                                                <rect
+                                                    x={diffPaletteSize /
+                                                        (steps * steps) /
+                                                        4}
+                                                    y={diffPaletteSize /
+                                                        (steps * steps) /
+                                                        4}
+                                                    width={diffPaletteSize /
+                                                        (steps * steps) /
+                                                        2}
+                                                    height={diffPaletteSize /
+                                                        (steps * steps) /
+                                                        2}
+                                                    rx="30"
+                                                    style="fill:{entryY.color};"
+                                                />
+                                                {#if (chroma.distance(entryX.color, entryY.color) < deltaECutoff) & (entryX.color !== entryY.color)}
+                                                    <polygon
+                                                        points={`0,0 0,${
+                                                            diffPaletteSize /
+                                                            (steps * steps) /
+                                                            4
+                                                        } ${
+                                                            diffPaletteSize /
+                                                            (steps * steps) /
+                                                            4
+                                                        }, 0`}
+                                                        style="fill:#fff"
+                                                    />
+                                                {/if}
+                                            </g>
+                                        {/each}
+                                    {/each}
+                                </g>
+                            </svg>
+                        </div>
+                        <div>
+                            Lightness chart
+                            <ColorChart
+                                colors={colorSeriesMcolors}
+                                xTicks={altColorSeriesM.map((d) => {
+                                    return d.key;
+                                })}
+                            />
+                        </div>
+
+                        <div>
+                            Hue chart
+                            <HueChart
+                                colors={colorSeriesMcolors}
+                            />
+                        </div>
+                        <div class="row">
+                            <button on:click={clickToCopy}>Copy</button>
+                            <textarea
+                                style="height:auto"
+                                cols="32"
+                                rows="8"
+                                type="text"
+                                value={formatColorSeries(altColorSeriesM)}
+                            />
+                        </div>
+                        <div class="row" style="height:{20*altColorSeriesM.length+40}px">
+                            <button on:click={clickToCopy}>Copy</button>
+                            <textarea
+                                style="height:auto"
+                                cols="32"
+                                rows="15"
+                                type="text"
+                                value={formatColorSeries(altColorSeriesM, 'biscale')}
+                            />
+                        </div>
                     </div>
+                    <div class="column">
+
+                    <DemoMap n={steps} colors={colorSeriesMcolors}></DemoMap>
+
+                </div>
+
                 </div>
             </div>
         </label>
@@ -444,6 +500,11 @@
         /* width:10em;
         height: 10em; */
     }
+
+    .defaultBlock {
+        display: flex;
+    }
+
     .column {
         background-color: white;
 

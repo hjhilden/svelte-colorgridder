@@ -27,7 +27,6 @@ $: xScale = scaleLinear()
 </script>
 
 <div>
-    Lightness chart
     <svg
     width={width+padding.left+padding.right}
     height={height+padding.top+padding.bottom}

@@ -3,15 +3,19 @@ import chroma from "chroma-js";
 import { APCAcontrast, sRGBtoY, colorParsley } from "apca-w3";
 
 
-function clamp (x, min, max) {
+export function clamp (x, min, max) {
     return Math.min(Math.max(x, min), max)
 }
 
-function wrap (x, min, max) {
+export function wrap (x, min, max) {
     let range = max-min
     let mod = x % range
     return mod + min
 
+}
+
+export function radians (degrees){
+    return degrees * Math.PI / 180
 }
 
 export const getContrastLc = (textColor, backgroundColor) => {
