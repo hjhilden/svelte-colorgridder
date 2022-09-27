@@ -61,7 +61,7 @@ export let parseColorInput = (inputcolors, bgColor) => {
             let c = clist[i];
             if (chroma.valid(c)) {
                 colors.push(c);
-            }
+            } else {colors.push('blue')} // as fallback
         }
         if (bgColor !== undefined){     if (chroma.valid(bgColor)) {
             colors.push(bgColor);

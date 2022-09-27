@@ -7,6 +7,7 @@ import { onMount } from 'svelte';
 
 export let n = 3
 export let colors = ["#c8efe2", "#baa68a", "#aa562c", "#81a8ce", "#78747e", "#6e3c28", "#3c62ba", "#384472", "#332324"]
+export let strokes = ["#c8efe2", "#baa68a", "#aa562c", "#81a8ce", "#78747e", "#6e3c28", "#3c62ba", "#384472", "#332324"]
 
 
 
@@ -45,6 +46,7 @@ onMount(async () => {
         //  x = scaleThreshold([7.5, 12.5, 18], range(n))
     //  y = scaleThreshold([6, 14.5, 18], range(n))
    
+    // scale hacked to domain where all categories are visible
      x = scaleQuantize([6.5, 12.15], range(n))
      y = scaleQuantize([1, 11.5], range(n))
     //  x = scaleQuantile(Array.from(data.values(), d => d[0]), range(n))
@@ -58,14 +60,13 @@ const color = (value, colors) => {
     return colors[y(b) + x(a) * n];
 }
 
-
 </script>
 <div>
 
 <svg viewBox="0, 0, 300, 500" width=300 height=500>
-    <g fill="white" stroke="black">
+    <g stroke-width="1px">
     {#each features as feature, i}
-    <path d={path(feature)} fill={color([feature.properties['emissions_'], feature.properties['val_added_']], colors) }/>
+    <path d={path(feature)} fill={color([feature.properties['emissions_'], feature.properties['val_added_']], colors)} stroke={color([feature.properties['emissions_'], feature.properties['val_added_']], strokes)}/>
 {/each}
     </g>
 </svg>

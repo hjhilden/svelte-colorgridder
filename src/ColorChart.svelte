@@ -5,24 +5,23 @@ import { getHcl } from '../scripts/utility';
 export let width =300
 export let height =200
 export let colors = ["#b7ffff", "#4e6bcd"]
-export let xTicks = []
+export let yTicks = []
 
 $: points = colors.map(color=>{
     return {color:color, l:getHcl(color).l}
 })
 
-let yTicks = [0, 25, 50, 75, 100]
+let xTicks = [0, 25, 50, 75, 100]
 
-const padding = { top: 20, right: 15, bottom: 20, left: 50 };
+const padding = { top: 20, right: 15, bottom: 20, left: 25 };
 
-$: steps = colors.length
 
 $: xScale = scaleLinear()
-		.domain([0, colors.length])
+		.domain([0, Math.max.apply(null, xTicks)] )
 		.range([padding.left, width - padding.right]);
 
 	$: yScale = scaleLinear()
-		.domain([0, Math.max.apply(null, yTicks)])
+		.domain([colors.length, 0])
 		.range([height - padding.bottom, padding.top]);
 </script>
 
@@ -32,19 +31,19 @@ $: xScale = scaleLinear()
     height={height+padding.top+padding.bottom}
 >
 <g class="axis y-axis">
-    {#each yTicks as tick}
-        <g class="tick tick-{tick}" transform="translate(0, {yScale(tick)})">
-            <line x2="{width-padding.right}"></line>
-            <text y="-4">l {tick}</text>
+    {#each yTicks as tick, i}
+        <g class="tick tick-{tick}" transform="translate(0, {yScale(i)})">
+            <line x1="{xScale(xTicks[0])}" x2="{width-padding.right}"></line>
+            <text y="2">{tick}</text>
         </g>
     {/each}
 </g>
 
 <g class="axis x-axis">
     {#each xTicks as tick, i}
-        <g class="tick tick-{tick}" transform="translate({xScale(i)}, {height} )">
+        <g class="tick tick-{tick}" transform="translate({xScale(tick)}, {height} )">
             <line y1="-12" y2="-{height}"></line>
-            <text y="0">{tick}</text>
+            <text y="0">l {tick}</text>
         </g>
     {/each}
 </g>
@@ -52,9 +51,9 @@ $: xScale = scaleLinear()
         {#each points as point, i}
             <circle
                 fill={point.color}
-                cx="{xScale(i)}"
-                cy="{yScale(point.l)}"
-                r={(5)}
+                cx="{xScale(point.l)}"
+                cy="{yScale(i)}"
+                r={(8)}
             />
 
         {/each}
