@@ -39,7 +39,6 @@
             .range([height - padding.bottom, padding.top]);
 
 
-$: console.log(points)
     </script>
     
     <div>

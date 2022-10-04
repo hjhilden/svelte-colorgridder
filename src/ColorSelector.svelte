@@ -15,7 +15,8 @@
 
 	$: ({h, c, l} = hclColor);
 	$: color = chroma.hcl(h, c,l)
- // nb! binds must refer to object internals (hclColor.h), not unpacked values (h) 
+
+	// nb! binds must refer to object internals (hclColor.h), not unpacked values (h) 
 	
 	// weird async (?) workaround as color  
 	// is interpreted as hex color instead of chroma color after input color change
@@ -32,7 +33,6 @@
 
 beforeUpdate(() => {
 	if (typeof color !== 'object'){
-		console.log(color)
 
 		hclColor = getHcl(color)}
 		

@@ -1,15 +1,25 @@
 <script>
 import { scaleLinear } from 'd3-scale';
-import chroma from "chroma-js";
+import {ascending} from 'd3-array'
 import { getHcl } from '../scripts/utility';
 export let width =300
 export let height =200
 export let colors = ["#b7ffff", "#4e6bcd"]
 export let yTicks = []
 
-$: points = colors.map(color=>{
-    return {color:color, l:getHcl(color).l}
-})
+const parseSum = (entry)=> {
+ return entry.split('-').reduce((a,b)=>parseInt(a)+parseInt(b))
+}
+console.log(yTicks)
+console.log(yTicks.map(d=> parseSum(d)))
+
+// sort by level sum
+
+$: points = colors.map((color, i)=>{
+    return {color:color, l:getHcl(color).l, id:yTicks[i]}
+}).sort((a,b)=>ascending(parseSum(a.id), parseSum(b.id)))
+
+
 
 let xTicks = [0, 25, 50, 75, 100]
 
@@ -31,10 +41,10 @@ $: xScale = scaleLinear()
     height={height+padding.top+padding.bottom}
 >
 <g class="axis y-axis">
-    {#each yTicks as tick, i}
+    {#each points as tick, i}
         <g class="tick tick-{tick}" transform="translate(0, {yScale(i)})">
             <line x1="{xScale(xTicks[0])}" x2="{width-padding.right}"></line>
-            <text y="2">{tick}</text>
+            <text y="2">{tick.id}</text>
         </g>
     {/each}
 </g>

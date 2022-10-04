@@ -5,7 +5,7 @@ html, body {
 }
 
 body {
-	color: #333;
+	color: rgb(94, 94, 94);
 	margin: 0;
 	padding: 8px;
 	box-sizing: border-box;
@@ -72,6 +72,10 @@ button {
 	color: #333;
 	background-color: #f4f4f4;
 	outline: none;
+	border-radius: 4px;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	
+	box-shadow: 1px 1px 2px #ccc;
 }
 
 button:disabled {

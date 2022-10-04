@@ -26,10 +26,13 @@ export const getContrastLc = (textColor, backgroundColor) => {
 };
 
 export const  invertTextColor = (textColor, backgroundColor) => {
+ // check for chroma.js color object 
+     if (backgroundColor?._rgb) backgroundColor = backgroundColor.hex()
     let Lc = getContrastLc(textColor, backgroundColor);
     if (Lc < 45) {
         return "white";
     } else return "black";
+    
 };
 
 export function shiftHcl(color, hShift=180, cShift=0, lShift=0){
@@ -37,10 +40,10 @@ export function shiftHcl(color, hShift=180, cShift=0, lShift=0){
     let hue = wrap(hclClr.h + hShift, 0, 360)
     let c = clamp(hclClr.c + cShift, 0, 100)
     let l = clamp(hclClr.l + lShift, 0, 100)
-    console.log('input')
-    console.table(hclClr)
-    console.log('output')
-    console.table(hue, c, l)
+    // console.log('input')
+    // console.table(hclClr)
+    // console.log('output')
+    // console.table(hue, c, l)
     return chroma.hcl(hue, c, l).hex("rgb");
 
 }
@@ -53,8 +56,8 @@ export function getHcl(color) {
 
 export let parseColorInput = (inputcolors, bgColor) => {
     let colors = []
-    if (inputcolors.length > 0) {
-        const regex = /[\s']/g;
+    if (inputcolors?.length > 0) {
+        const regex = /[\s'"]/g;
         const inputColorsParsed = inputcolors.replaceAll(regex, "");
         const clist = inputColorsParsed.split(",");
         for (let i = 0; i < clist.length; i++) {
