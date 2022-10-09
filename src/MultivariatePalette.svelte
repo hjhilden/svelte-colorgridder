@@ -8,6 +8,13 @@ export let colorSeries = []
 export let strokeSeries = []
 export let steps
 export let showStroke
+export let clickedSwatch = 0
+
+// make dispatch for clicked color
+function clickMe(e) {
+    console.log(e.target.id)
+    clickedSwatch = e.target.id
+}
 </script>
 
 
@@ -21,7 +28,8 @@ export let showStroke
                             >
                                 {#each colorSeries as entry, i}
                                     {#if showStroke}
-                                        <rect
+                                        <rect on:click={clickMe}
+                                        id={i + '-swatch'}
                                             fill={entry.color}
                                             x={entry.x + paletteMargin}
                                             y={entry.y + paletteMargin}
@@ -40,7 +48,7 @@ export let showStroke
                                         />
                                     {/if}
 
-                                    <g
+                                    <g 
                                         transform={`translate(${
                                             entry.x +
                                             paletteMargin +

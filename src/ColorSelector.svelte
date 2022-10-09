@@ -1,7 +1,9 @@
 <script>
 	
 	import chroma from 'chroma-js'
-	import { onMount, afterUpdate, beforeUpdate } from 'svelte';
+	import { onMount, afterUpdate, beforeUpdate, createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher();
 
 	export let hclColor // optional input initial color as hcl
 
@@ -11,6 +13,12 @@
 	let h, c, l;
 			let canvas;
 	let colorOld = '#ffb'
+
+
+	function colorChangeCallback() {
+  dispatch('colorChange', color);
+
+}
 
 	if(hclColor === undefined)	{hclColor = getHcl(color);}// 
 
@@ -29,12 +37,17 @@
 		   let h, c, l;
 
 		let colorParsed
-		if (chroma.valid(color)){ 
+
+		// if(color.hcl()){
+		// 	colorParsed = color
+		// 	colorOld = color
+		// }
+		 if (chroma.valid(color)){ 
     colorParsed =  chroma(color)
-		colorOld = color
+		// colorOld = color
   } else {
 		console.log("faulty color")
-		colorParsed = chroma(colorOld)
+		// colorParsed = chroma(colorOld)
   } 
     [h, c, l] = colorParsed.hcl();
     return { h: h, c: c, l: l };
@@ -47,18 +60,22 @@ function 	parseInputColor() {
 }
 
 beforeUpdate(() => {
-	if (typeof color !== 'object'){
-
-		hclColor = getHcl(color)}
+// getHcl modified to handle chroma.js color
+		hclColor = getHcl(color)
+	}
 		
-	});
+	);
 	
 	onMount(() => {
 					drawColorScale()
+					colorChangeCallback()
+
 	})
 	
 		afterUpdate(() => {
+
 					drawColorScale()
+					colorChangeCallback()
 	})
 	
 	

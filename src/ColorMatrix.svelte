@@ -197,8 +197,9 @@
     colorPickerState ='hidden'
     
     let editColorIndex = 0
-    $: selectedColorLeft = bivarPaletteLeft[editColorIndex]
-
+    let selectedColorLeft
+    // $: selectedColorLeft = bivarPaletteLeft[editColorIndex].color
+ 
     // also selects individual colors in generated palette
     function showColorSelector(){
         console.log(this.id)
@@ -206,10 +207,17 @@
 		colorPickerState = (colorPickerState == 'visible' ? 'hidden' : 'visible')
 		pickerPos = [this.getBoundingClientRect().left, this.getBoundingClientRect().top]
 		// console.log(this.getBoundingClientRect().left+10, this.getBoundingClientRect().top+10)
-        console.log(bivarPaletteLeft[editColorIndex])
+        selectedColorLeft = bivarPaletteLeft[editColorIndex].color
+
 
 	}
 
+    function colorSelectorCallback(colorDispatch) {
+        // console.log(colorDispatch.detail)
+        bivarPaletteLeft[editColorIndex].color = colorDispatch.detail
+        selectedColorLeft = bivarPaletteLeft[editColorIndex].color
+
+}    
 
 
     const formatColorSeries = (colorSeries, target = "js") => {
@@ -383,6 +391,7 @@
             return colorseriesShifted;
         }
     }*/
+
 </script>
 
 <main>
@@ -555,7 +564,8 @@
         </div>
         <div class="column" style="display: grid; margin: 2em; padding:2em">
             <div id="colorpicker" class={"picker "+colorPickerState} top={pickerPos[0]} left={pickerPos[1]}>
-                <ColorSelector bind:color={bivarPaletteLeft[editColorIndex].color}/>
+                <ColorSelector color={bivarPaletteLeft[editColorIndex].color} on:colorChange={colorSelectorCallback}
+                />
         </div>
             <div class="row">
                 <div class="defaultBlock">
@@ -585,7 +595,7 @@
                                 style="background-color:{paletteColor.color}; color:{invertTextColor(
                                     'black',
                                     paletteColor.color
-                                )}">{paletteColor.color}</button
+                                )}">{paletteColor.key}: {paletteColor.color}</button
                             >
                     {/each}
                 </div>
