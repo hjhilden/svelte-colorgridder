@@ -10,8 +10,7 @@ export let yTicks = []
 const parseSum = (entry)=> {
  return entry.split('-').reduce((a,b)=>parseInt(a)+parseInt(b))
 }
-console.log(yTicks)
-console.log(yTicks.map(d=> parseSum(d)))
+
 
 // sort by level sum
 

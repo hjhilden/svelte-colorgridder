@@ -28,6 +28,11 @@
         setClipboard(copyString);
     }
 
+    function clickToCopySvg() {
+		const svgstring = this.querySelector("svg").outerHTML;
+		setClipboard(svgstring);
+	}
+
     export let colors;
 
     // window.location.hash = "bivariate";
@@ -38,8 +43,8 @@
     let shiftLValue = 0.0;
     let shiftCValue = 0.0;
     let deltaECutoff = 22;
-    let darkenCoeff = 2;
-    let darkenBoost = 10.5;
+    let darkenCoeff = 1.5;
+    let darkenBoost = 0.7;
 
     let colorseriesShifted;
     let selHcl;
@@ -187,6 +192,26 @@
         inputcolors = inputcolorsParsed.join(", ");
     }
 
+    let pickerPos, colorPickerState
+    pickerPos = [0,0]
+    colorPickerState ='hidden'
+    
+    let editColorIndex = 0
+    $: selectedColorLeft = bivarPaletteLeft[editColorIndex]
+
+    // also selects individual colors in generated palette
+    function showColorSelector(){
+        console.log(this.id)
+        editColorIndex = this.id.split('.')[0]
+		colorPickerState = (colorPickerState == 'visible' ? 'hidden' : 'visible')
+		pickerPos = [this.getBoundingClientRect().left, this.getBoundingClientRect().top]
+		// console.log(this.getBoundingClientRect().left+10, this.getBoundingClientRect().top+10)
+        console.log(bivarPaletteLeft[editColorIndex])
+
+	}
+
+
+
     const formatColorSeries = (colorSeries, target = "js") => {
         if (target === "js") {
             return `[${colorSeries
@@ -227,7 +252,7 @@
 
         const easeInExpo = (x) => {
             const f = scaleLinear([0, 1]).domain([0, steps * steps]);
-             return Math.pow(1.5, 10 * f(x) - 10)-0.02;
+             return Math.pow(darkenCoeff, 10 * f(x) - 10)-0.02;
             //return Math.pow(2, 10 * f(x) - 10);
 
         };
@@ -238,11 +263,11 @@
                     let color;
 
                     if (mode === "mix") {
-                        
-                        // let d = easeInExpo(i * j)+(i*j)*darkenBoost
-                        let d = (i+j)*0.2+easeInExpo(i * j) * darkenBoost +
-                                     easeOutExpo(i * j)
-                        console.log(d);
+                        // this darkens only colors above 3-1 / 1-3
+                         let d = easeInExpo(i * j)+(i*j)*darkenBoost
+                         // this darkens more, but also ”pure” colors
+                        // d = (i+j)*0.2+easeInExpo(i * j) * darkenBoost + easeOutExpo(i * j)
+                                    //  
                         color = chroma
                             .mix(scale1[i], scale2[j], mixRange(j - i), "lab")
                             // .darken(Math.sin((i * j) * darkenCoeff), "lab");
@@ -509,7 +534,7 @@
                             bind:value={darkenBoost}
                             min={0.0}
                             max={100.0}
-                            step="0.1"
+                            step="0.01"
                         />
                     </label>
                 </div>
@@ -529,6 +554,9 @@
             </div>
         </div>
         <div class="column" style="display: grid; margin: 2em; padding:2em">
+            <div id="colorpicker" class={"picker "+colorPickerState} top={pickerPos[0]} left={pickerPos[1]}>
+                <ColorSelector bind:color={bivarPaletteLeft[editColorIndex].color}/>
+        </div>
             <div class="row">
                 <div class="defaultBlock">
                     <label>
@@ -549,6 +577,17 @@
                         {paletteSize}
                         {paletteMargin}
                     />
+                    {#each bivarPaletteLeft as paletteColor, i}
+                    <button
+                                id={i.toString()+'.bivarPaletteLeft'}
+                                class:selected={index === i.toString()+'_pal'}
+                                on:click={showColorSelector}
+                                style="background-color:{paletteColor.color}; color:{invertTextColor(
+                                    'black',
+                                    paletteColor.color
+                                )}">{paletteColor.color}</button
+                            >
+                    {/each}
                 </div>
                 <div class="defaultBlock">
                     <label>
@@ -574,7 +613,7 @@
             <div class="row">
                 <div>
                     <p>
-                        Pairs with white dot have Delta E below {deltaECutoff}
+                        Pairs with circled grey dot have Delta E below {deltaECutoff}
                     </p>
                     <DiffPalette
                         {diffPaletteSize}
@@ -585,7 +624,7 @@
                     />
                 </div>
                 <div>
-                    <p>Pairs for mix mode</p>
+                    <p>Pairs for {selectedPaletteRight.text}</p>
                     <DiffPalette
                         {diffPaletteSize}
                         {paletteMargin}
@@ -597,7 +636,7 @@
             </div>
             <div class="row">
                 <div>
-                    <p>Lightness chart, multiply</p>
+                    <p>Lightness chart, {selectedPaletteLeft.text}</p>
                     <ColorChart
                         colors={bivarPaletteLeftColors}
                         yTicks={bivarPaletteLeft.map((d) => {
@@ -606,7 +645,7 @@
                     />
                 </div>
                 <div>
-                    <p>Lightness chart, mix</p>
+                    <p>Lightness chart, {selectedPaletteRight.text}</p>
                     <ColorChart
                         colors={bivarPaletteRightColors}
                         yTicks={bivarPaletteRight.map((d) => {
@@ -617,12 +656,13 @@
             </div>
 
             <div class="row">
-                <div>
-                    <p>Hue chart, multiply</p>
+                <div on:click={clickToCopySvg}
+                >
+                    <p>Hue chart, {selectedPaletteLeft.text}</p>
                     <HueChart colors={bivarPaletteLeftColors} />
                 </div>
-                <div>
-                    <p>Hue chart, mix</p>
+                <div on:click={clickToCopySvg}>
+                    <p>Hue chart, {selectedPaletteRight.text}</p>
                     <HueChart colors={bivarPaletteRightColors} />
                 </div>
             </div>
@@ -646,7 +686,7 @@
 
             <div class="row">
                 <div>
-                    <p>Color codes for multiply scale</p>
+                    <p>Color codes for {selectedPaletteLeft.text}</p>
 
                     <div style="    display: flex;">
                         <button on:click={clickToCopy} class="copybutton"
@@ -681,7 +721,7 @@
                     </div>
                 </div>
                 <div>
-                    <p>Color codes for mix scale</p>
+                    <p>Color codes for {selectedPaletteRight.text}</p>
 
                     <div style="    display: flex;">
                         <button on:click={clickToCopy} class="copybutton"
@@ -718,6 +758,7 @@
             </div>
         </div>
     </div>
+    
 </main>
 
 <style>
@@ -804,4 +845,13 @@
     input[type="radio"] {
         margin: 0.2em;
     }
+
+    /* hideable secondary color picker */
+    .visible{
+		display:block;
+	}
+	.hidden{
+		display:none;
+	}
+	.picker{position:fixed;}
 </style>

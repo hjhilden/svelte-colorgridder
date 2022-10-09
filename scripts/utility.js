@@ -50,9 +50,18 @@ export function shiftHcl(color, hShift=180, cShift=0, lShift=0){
 
 export function getHcl(color) {
     let h, c, l;
-    [h, c, l] = chroma(color).hcl();
-    return { h: h, c: c, l: l };
-};
+
+ let colorParsed
+ if (chroma.valid(color)){ 
+colorParsed =  chroma(color)
+} else {
+ console.log("faulty color")
+ colorParsed = chroma('fff')
+} 
+[h, c, l] = colorParsed.hcl();
+return { h: h, c: c, l: l };
+}
+
 
 export let parseColorInput = (inputcolors, bgColor) => {
     let colors = []

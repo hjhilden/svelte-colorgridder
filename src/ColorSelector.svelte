@@ -10,26 +10,41 @@
 	export let color = '#ffb';	
 	let h, c, l;
 			let canvas;
-	
+	let colorOld = '#ffb'
+
 	if(hclColor === undefined)	{hclColor = getHcl(color);}// 
 
 	$: ({h, c, l} = hclColor);
 	$: color = chroma.hcl(h, c,l)
-
 	// nb! binds must refer to object internals (hclColor.h), not unpacked values (h) 
 	
 	// weird async (?) workaround as color  
 	// is interpreted as hex color instead of chroma color after input color change
 	const getClipped = (color) => { 
 		if (color.clipped) {return color.clipped()}
-		else {return chroma(color).clipped()}
+		else if(chroma.valid(color)){return chroma(color).clipped()} 
 	}
 	
- function getHcl(color) {
-    let h, c, l;
-    [h, c, l] = chroma(color).hcl();
+  function getHcl(color) {
+		   let h, c, l;
+
+		let colorParsed
+		if (chroma.valid(color)){ 
+    colorParsed =  chroma(color)
+		colorOld = color
+  } else {
+		console.log("faulty color")
+		colorParsed = chroma(colorOld)
+  } 
+    [h, c, l] = colorParsed.hcl();
     return { h: h, c: c, l: l };
+	
+
 };
+	
+function 	parseInputColor() {
+	getHcl(color)
+}
 
 beforeUpdate(() => {
 	if (typeof color !== 'object'){
@@ -90,8 +105,8 @@ beforeUpdate(() => {
 	<input type=range bind:value={hclColor.l} min=0 max=100 >
 </label>
 <div>H:{h.toFixed(2)} C:{c.toFixed(2)} L:{l.toFixed(2)}</div>
-<div style='border-top:{color} 4px solid'>
-	{color} 
+<div style='border-top:{color} 4px solid; display:flex; align-items:center'>
+	<input type=text bind:value={color} on:change={parseInputColor}>
 	<span class='note'>{getClipped(color) ? 'clipped!':''}</span>
 	</div>
 </div>
@@ -111,14 +126,22 @@ input[type="range"] {
   cursor: pointer;
 		height: 5px;
 }
+
+input[type="text"] {
+	width:6em;
+	margin-right:0.5rem;
+	margin-top:0.5rem;
+	margin-bottom: 0;
+  
+}
 	.note{
-		color:#fa3239
+		color:#fa3239;
+		margin-top: 0.5rem;
 	}
 	.colorSelector{
 		width: 16rem;
 		padding: 0.5rem;
-		font-family: 'Andale Mono', monospace;
-				background-color:#eee
+		background-color:#eee
 
 	}
 </style>
