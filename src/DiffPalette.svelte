@@ -13,11 +13,12 @@
         colorSeries.forEach((dX, i) => {
             colorSeries.forEach((dY, j) => {
                 if (i > j) {
-                    let deltaE = chroma.distance(dX.color, dY.color);
+                    let deltaE = chroma.deltaE(dX.color, dY.color);
                     if (deltaE < deltaECutoff) failingPairs += 1;
 
                     summary.push(deltaE);
                     data.push({
+                        pairKey: `${dX.key} ${dY.key}`,
                         colorX: dX.color,
                         colorY: dY.color,
                         deltaE: deltaE,
@@ -42,7 +43,7 @@
         steps * steps,
         deltaECutoff
     );
-    console.log(paletteStats)
+    $: console.log(paletteStats)
 
     const swatchWidth = diffPaletteSize / (steps * steps);
 </script>

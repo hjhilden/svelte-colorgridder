@@ -208,8 +208,6 @@
 		pickerPos = [this.getBoundingClientRect().left, this.getBoundingClientRect().top]
 		// console.log(this.getBoundingClientRect().left+10, this.getBoundingClientRect().top+10)
         selectedColorLeft = bivarPaletteLeft[editColorIndex].color
-
-
 	}
 
     function colorSelectorCallback(colorDispatch) {
@@ -218,6 +216,26 @@
         selectedColorLeft = bivarPaletteLeft[editColorIndex].color
 
 }    
+
+function showColorSelectorForSwatch(detail){
+        console.log(detail)
+        
+        if (editColorIndex===detail.id.split('-')[0]){		colorPickerState = (colorPickerState == 'visible' ? 'hidden' : 'visible')}
+        else if(colorPickerState === 'hidden' ) {colorPickerState = 'visible'}
+
+        editColorIndex = detail.id.split('-')[0]
+
+		pickerPos = detail.pos
+		// console.log(this.getBoundingClientRect().left+10, this.getBoundingClientRect().top+10)
+        selectedColorLeft = bivarPaletteLeft[editColorIndex].color
+	}
+
+function paletteSwatchCallback(clickedSwatch) {
+    // console.log(clickedSwatch)
+    showColorSelectorForSwatch(clickedSwatch.detail)
+}
+
+
 
 
     const formatColorSeries = (colorSeries, target = "js") => {
@@ -563,9 +581,23 @@
             </div>
         </div>
         <div class="column" style="display: grid; margin: 2em; padding:2em">
-            <div id="colorpicker" class={"picker "+colorPickerState} top={pickerPos[0]} left={pickerPos[1]}>
+            <div id="colorpicker" class={"picker "+colorPickerState} style={`left:${270}px; top:${100}px; width:17rem`}>
+                <div style="
+                background-color:#eee;
+                display: flex;
+                padding-left: 0.5rem;
+                margin-bottom: -0.5rem;
+                justify-content: space-between;
+                align-items: center;
+            ">Adjust generated colors<button style='line-height: 0px;
+                    margin: 0.25em;
+                    height: 1.5rem;' on:click={()=> {
+                    colorPickerState = (colorPickerState == 'visible' ? 'hidden' : 'visible')
+                }}>×</button></div>
+                
                 <ColorSelector color={bivarPaletteLeft[editColorIndex].color} on:colorChange={colorSelectorCallback}
                 />
+            
         </div>
             <div class="row">
                 <div class="defaultBlock">
@@ -580,14 +612,16 @@
                         </select></label
                     >
                     <MultivariatePalette
+                    id={'paletteLeft'}
                         colorSeries={bivarPaletteLeft}
                         {steps}
                         strokeSeries={bivarPaletteLeftStroke}
                         {showStroke}
                         {paletteSize}
                         {paletteMargin}
+                        on:clickedSwatch={paletteSwatchCallback}
                     />
-                    {#each bivarPaletteLeft as paletteColor, i}
+                    <!-- {#each bivarPaletteLeft as paletteColor, i}
                     <button
                                 id={i.toString()+'.bivarPaletteLeft'}
                                 class:selected={index === i.toString()+'_pal'}
@@ -597,7 +631,7 @@
                                     paletteColor.color
                                 )}">{paletteColor.key}: {paletteColor.color}</button
                             >
-                    {/each}
+                    {/each} -->
                 </div>
                 <div class="defaultBlock">
                     <label>
@@ -863,5 +897,6 @@
 	.hidden{
 		display:none;
 	}
-	.picker{position:fixed;}
+	.picker{position:relative;
+    height: 0;}
 </style>
