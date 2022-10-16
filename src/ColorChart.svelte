@@ -63,6 +63,8 @@ $: xScale = scaleLinear()
                 cx="{xScale(point.l)}"
                 cy="{yScale(i)}"
                 r={(8)}
+                stroke={"rgba(0, 0, 0, 0.1)"}
+                stroke-width={'2px'}
             />
 
         {/each}

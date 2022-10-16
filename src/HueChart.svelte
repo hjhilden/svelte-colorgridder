@@ -38,7 +38,20 @@
             .domain([-100, Math.max.apply(null, yTicks)])
             .range([height - padding.bottom, padding.top]);
 
+    const cX = (chroma, hue)=> {
+let x = xScale(Math.sin(radians(hue))*chroma)
+if(isNaN(x)) {x=xScale(0)}
+return x
+    }
+    const cY = (chroma, hue)=> {
 
+let y = yScale(Math.cos(radians(hue))*chroma)
+if(isNaN(y)) {y=yScale(0)
+}
+return y
+    }
+
+    
     </script>
     
     <div>
@@ -91,9 +104,11 @@
             {#each points as point, i}
                 <circle
                     fill={point.color}
-                    cx="{xScale(Math.sin(radians(point.h))*point.c)}"
-                    cy="{yScale(Math.cos(radians(point.h))*point.c)}"
+                    cx="{cX(point.c, point.h)}"
+                    cy="{cY(point.c, point.h)}"
                     r={(5)}
+                    stroke={"rgba(0, 0, 0, 0.1)"}
+                    stroke-width={'2px'}
                 />
             
             {/each}

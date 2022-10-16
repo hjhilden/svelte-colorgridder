@@ -6,17 +6,27 @@
     export let colorSeries = [];
     export let steps;
 
+    // verify delta E values
+    // console.log('deltaE', chroma.deltaE("#a6b5ad", "#88c270"))
+    // console.log('distance', chroma.distance("#a6b5ad", "#88c270"))
+
+    const average = (values)=>{
+        let sum = values.reduce((a, b) => a + b, 0)
+        return sum / values.length 
+    }
+
     const diffPaletteData = (colorSeries, size, length, deltaECutoff) => {
         let data = [];
         let summary = [];
         let failingPairs = 0;
         colorSeries.forEach((dX, i) => {
             colorSeries.forEach((dY, j) => {
+                let deltaE = chroma.deltaE(dX.color, dY.color);
+                // console.log(dX.key, dX.color.hex(), dY.color.hex(), dY.key, deltaE, chroma.deltaE(dX.color.hex(), dY.color.hex()))
                 if (i > j) {
-                    let deltaE = chroma.deltaE(dX.color, dY.color);
                     if (deltaE < deltaECutoff) failingPairs += 1;
-
                     summary.push(deltaE);
+
                     data.push({
                         pairKey: `${dX.key} ${dY.key}`,
                         colorX: dX.color,
@@ -33,6 +43,7 @@
             paletteData: data,
             deltaEMax: Math.max(...summary),
             deltaEMin: Math.min(...summary),
+            deltaEAvg: average(summary),
             failingPairs: failingPairs,
         };
     };
@@ -101,7 +112,7 @@
         {/each}
     </g>
     <text y={diffPaletteSize-20} font-size=11>
-        deltaE, max: {paletteStats.deltaEMax.toFixed(2)}, min: {paletteStats.deltaEMin.toFixed(2)}
+        deltaE: max {paletteStats.deltaEMax.toFixed(2)}, min {paletteStats.deltaEMin.toFixed(2)}, average {paletteStats.deltaEAvg.toFixed(2)}
     </text>
     <text y={diffPaletteSize} font-size=11>
         failing pairs: {paletteStats.failingPairs} of {paletteStats.paletteData.length}

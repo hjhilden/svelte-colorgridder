@@ -42,7 +42,7 @@
     let shiftHueValue = 85;
     let shiftLValue = 0.0;
     let shiftCValue = 0.0;
-    let deltaECutoff = 22;
+    let deltaECutoff = 11;
     let darkenCoeff = 1.5;
     let darkenBoost = 0.7;
 
@@ -184,6 +184,9 @@
         );
         inputcolors = inputcolorsParsed.join(", ");
         setAddress(inputcolorsParsed);
+        if(inputPalette.length>0){
+            selectedPaletteRight = secondaryPaletteChoice[2]
+        }
     };
 
     function setColorIndex() {
@@ -611,6 +614,7 @@ function paletteSwatchCallback(clickedSwatch) {
                             {/each}
                         </select></label
                     >
+                    <div on:click={clickToCopySvg}>
                     <MultivariatePalette
                     id={'paletteLeft'}
                         colorSeries={bivarPaletteLeft}
@@ -620,7 +624,7 @@ function paletteSwatchCallback(clickedSwatch) {
                         {paletteSize}
                         {paletteMargin}
                         on:clickedSwatch={paletteSwatchCallback}
-                    />
+                    /></div>
                     <!-- {#each bivarPaletteLeft as paletteColor, i}
                     <button
                                 id={i.toString()+'.bivarPaletteLeft'}
