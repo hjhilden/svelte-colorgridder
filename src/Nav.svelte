@@ -12,8 +12,8 @@
     
     // these are our 'pages' to navigate through (in order for this export to work the script tag MUST include context="module")
     export const navOptions = [
-        { page: 'Color scale grid',   component: Main, hash: 'main' },
-        { page: 'Bivariate color matrix',   component: ColorMatrix, hash: 'bivariate' },
+        { page: 'Contrast grid',   component: Main, hash: 'main' },
+        { page: 'Bivariate hue blender',   component: ColorMatrix, hash: 'bivariate' },
         { page: 'About this app',   component: About, hash:'about' },
 
             // other navigation pages can go here

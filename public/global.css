@@ -1,7 +1,22 @@
+
+
 html, body {
 	position: relative;
 	width: 100%;
 	height: 100%;
+}
+
+.container{
+	margin: 0 1.5em;
+
+}
+
+
+h1{
+	font-size: 3.3em;
+    font-weight: 600;
+	background-color: rgb(237, 241, 241);
+
 }
 
 body {
@@ -11,13 +26,27 @@ body {
 	box-sizing: border-box;
 	font-family: 'Source Code Pro', monospace;
 		background-color: rgb(237, 241, 241);
+		background: repeating-linear-gradient(-45deg, whitesmoke, whitesmoke 15px, white 17px);
+
+
+}
+
+.p-2{background-color: rgb(237, 241, 241);
+}
+.p-2 h1{
+	margin-block-start: 0em;
+	padding-top: 0.76em;
+    margin-block-end: 0.67em;
+	padding-left: 1rem;
 }
 
 main {
 	display: flex;
 	justify-content: space-around;
-
+	background-color: rgb(237, 241, 241);
+	height: 100%;
 }
+
 
 input[type="range"] {
   -webkit-appearance: none;
@@ -27,15 +56,27 @@ input[type="range"] {
 		height: 5px;
 }
 
+.break {
+	flex-basis: 100%;
+	height: 0;
+  }
+
+.divider{
+	border-bottom: 1px solid rgb(94, 94, 94);
+	flex-basis: 100%;
+	height: 0;
+}
+
 
 
 a {
-	color: rgb(0,100,200);
-	text-decoration: none;
+	color: rgb(59, 110, 160);
+	text-decoration: underline 1px dashed;
+	text-underline-offset: 4px;
 }
 
 a:hover {
-	text-decoration: underline;
+	text-decoration: underline 1px;
 }
 
 a:visited {
@@ -50,6 +91,14 @@ label {
 	font-size: 9pt;
 	font-weight: 600;
 	text-transform: uppercase;
+}
+
+.intro{
+    margin: 0em 2em;
+    padding: 0em 0em 1em;
+    max-width: 60%;
+    font-size: 1.33em;
+    line-height: 1.5;
 }
 
 
@@ -117,17 +166,21 @@ button:focus {
   }
   
   .nav-tabs {
-	border-bottom: 1px solid #dee2e6;
+	border-bottom: 8px solid rgb(94, 94, 94);
   }
   
   .nav-tabs .nav-item {
-	margin-bottom: -1px;
+	margin-bottom: -8px;
+    margin-left: 1px;
+    margin-right: 1px;
   }
   
   .nav-tabs .nav-link {
 	border: 1px solid transparent;
-	border-top-left-radius: 0.25rem;
-	border-top-right-radius: 0.25rem;
+    border-bottom: none;
+    border-radius: 0.35rem 0.35rem 0em 0em;
+    font-weight: 600;
+	box-shadow: rgb(132 122 122) 1px 0px 1px;
   }
   
   .nav-tabs .nav-link:hover, .nav-tabs .nav-link:focus {

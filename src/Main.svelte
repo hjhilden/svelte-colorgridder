@@ -24,7 +24,6 @@
 	}
 
 
-
 	const setAddress = (colors) => {
 		history.pushState(
 			colors,

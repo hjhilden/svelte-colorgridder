@@ -48,7 +48,7 @@ export function shiftHcl(color, hShift=180, cShift=0, lShift=0){
 
 }
 
-export function getHcl(color) {
+export function getHcl(color, mode='hcl') {
     let h, c, l;
 
  let colorParsed
@@ -58,7 +58,10 @@ colorParsed =  chroma(color)
  console.log("faulty color")
  colorParsed = chroma('fff')
 } 
-[h, c, l] = colorParsed.hcl();
+if(mode==='oklch') {
+    [l, c, h] = colorParsed.oklch();
+} else [h, c, l] = colorParsed.hcl();
+
 return { h: h, c: c, l: l };
 }
 

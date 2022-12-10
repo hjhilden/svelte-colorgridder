@@ -10,6 +10,7 @@
     import MultivariatePalette from "./MultivariatePalette.svelte";
     import ColorChart from "./ColorChart.svelte";
     import HueChart from "./HueChart.svelte";
+    import MiniHueChart from "./MiniHueChart.svelte";
     import DemoMap from "./DemoMap.svelte";
     import DiffPalette from "./DiffPalette.svelte";
 
@@ -50,12 +51,15 @@
     let selHcl;
     let index = "0";
     const paletteSize = 200;
-    const paletteMargin = 55;
+    const paletteMargin = 65;
+
+    console.log(chroma("#feb24c").oklch())
+
 
     const diffPaletteSize = 225;
 
     $: colorLabels = [
-        "Color 0 1-1",
+        "Color low 1-1",
         `Color Y ${steps}-1`,
         `Color X 1-${steps}`,
     ];
@@ -184,7 +188,7 @@
         );
         inputcolors = inputcolorsParsed.join(", ");
         setAddress(inputcolorsParsed);
-        if(inputPalette.length>0){
+        if(inputPalette?.length>0){
             selectedPaletteRight = secondaryPaletteChoice[2]
         }
     };
@@ -201,6 +205,8 @@
     
     let editColorIndex = 0
     let selectedColorLeft
+    let selectedColorRight 
+
     // $: selectedColorLeft = bivarPaletteLeft[editColorIndex].color
  
     // also selects individual colors in generated palette
@@ -214,7 +220,7 @@
 	}
 
     function colorSelectorCallback(colorDispatch) {
-        // console.log(colorDispatch.detail)
+
         bivarPaletteLeft[editColorIndex].color = colorDispatch.detail
         selectedColorLeft = bivarPaletteLeft[editColorIndex].color
 
@@ -222,7 +228,8 @@
 
 function showColorSelectorForSwatch(detail){
         console.log(detail)
-        
+        const paletteId = detail.paletteId
+
         if (editColorIndex===detail.id.split('-')[0]){		colorPickerState = (colorPickerState == 'visible' ? 'hidden' : 'visible')}
         else if(colorPickerState === 'hidden' ) {colorPickerState = 'visible'}
 
@@ -230,7 +237,11 @@ function showColorSelectorForSwatch(detail){
 
 		pickerPos = detail.pos
 		// console.log(this.getBoundingClientRect().left+10, this.getBoundingClientRect().top+10)
-        selectedColorLeft = bivarPaletteLeft[editColorIndex].color
+        switch(paletteId){
+            case 'paletteLeft': selectedColorLeft = bivarPaletteLeft[editColorIndex].color
+            case 'paletteRight': selectedColorRight = bivarPaletteRight[editColorIndex].color
+        }
+        
 	}
 
 function paletteSwatchCallback(clickedSwatch) {
@@ -311,8 +322,8 @@ function paletteSwatchCallback(clickedSwatch) {
                     } else color = chroma.blend(scale1[i], scale2[j], mode);
                     data[i * steps + j] = {
                         color: color,
-                        x: 125 + (-i * 200) / steps,
-                        y: 125 + (-j * 200) / steps,
+                        x: 125 + (-i * paletteSize) / steps,
+                        y: 125 + (-j * paletteSize) / steps,
                         key: `${i + 1}-${j + 1}`,
                     };
                 }
@@ -331,8 +342,8 @@ function paletteSwatchCallback(clickedSwatch) {
                 let color = scaleAB[i * steps + j];
                 data[i * steps + j] = {
                     color: color,
-                    x: 125 + (-i * 200) / steps,
-                    y: 125 + (-j * 200) / steps,
+                    x: 125 + (-i * paletteSize) / steps,
+                    y: 125 + (-j * paletteSize) / steps,
                     key: `${i + 1}-${j + 1}`,
                 };
             }
@@ -416,7 +427,33 @@ function paletteSwatchCallback(clickedSwatch) {
 </script>
 
 <main>
-    <div style="width:80vw; height: 50vh">
+    <div style="width:80vw;">
+        <div class ="intro">
+        The bivariate hue blender creates new color palettes for <a href="https://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/" target="blank">bivariate choropleth maps</a>. 
+        It takes two input colors — a low color 
+        <button class="introbutton"
+        id={"0"}
+        class:selected={index === "0"}
+        on:click={setColorIndex}
+        style="background-color:{inputcolorsParsed[0]}; color:{invertTextColor(
+            'black',
+            inputcolorsParsed[0]
+        )}">{inputcolorsParsed[0]}</button>, and a color Y <button class="introbutton"
+        id={"1"}
+        class:selected={index === "1"}
+        on:click={setColorIndex}
+        style="background-color:{inputcolorsParsed[1]}; color:{invertTextColor(
+            'black',
+            inputcolorsParsed[1]
+        )}">{inputcolorsParsed[1]}</button> — and creates a third color X <button class="introbutton"
+        id={"2"}
+        class:selected={index === "2"}
+        on:click={setColorIndex}
+        style="background-color:{inputcolorsParsed[2]}; color:{invertTextColor(
+            'black',
+            inputcolorsParsed[2]
+        )}">{inputcolorsParsed[2]}</button>, by rotating the hue angle of color Y {shiftHueValue}° using the <a href="https://hclwizard.org/why-hcl/" target="blank"> Hue-Chroma-Lightness (HCL)</a> color mode. The remaining colors are created based on this.
+    </div>
         <div class="column_box">
             <div class="column_header">
                 <h2>Color values input</h2>
@@ -483,9 +520,24 @@ function paletteSwatchCallback(clickedSwatch) {
             <div class="column">
                 <p><b>Adjust colors</b></p>
                 <div class="inputs">
-                    <label class="colorslider">
-                        <b>Set color X offset angle</b>
-                        <input
+                    <div style="    display: flex;
+                    flex-direction: row;
+                    flex-wrap: wrap; align-items: center;">
+                    <b>Set color X hue offset, degrees</b>
+                    <MiniHueChart colors={[inputcolorsParsed[1], inputcolorsParsed[inputcolorsParsed.length-1]]} />
+                    <input style="height: 50%;"
+                    type="number"
+                    id="colorH"
+                    bind:value={shiftHueValue}
+                    min="0"
+                    max={360.0}
+                    step="0.1"
+                    on:change={updateColorInput}
+                />
+                <div class="break"></div>
+                    <label class="colorslider" style="display:flex;">
+                        angle° 
+                        <input 
                             type="range"
                             id="colorH"
                             bind:value={shiftHueValue}
@@ -493,51 +545,26 @@ function paletteSwatchCallback(clickedSwatch) {
                             max={360.0}
                             on:change={updateColorInput}
                         />
-                        <input
-                            type="number"
-                            id="colorH"
-                            bind:value={shiftHueValue}
-                            min="0"
-                            max={360.0}
-                            step="0.1"
-                            on:change={updateColorInput}
-                        />
-                    </label>
-                    <label class="colorslider">
-                        X lightness tweak
-                        <input
-                            type="range"
-                            id="colorL"
-                            bind:value={shiftLValue}
-                            min={-100.0}
-                            max={100.0}
-                            on:change={updateColorInput}
-                        />
-                        <input
-                            type="number"
-                            id="colorL"
-                            bind:value={shiftLValue}
-                            min={-100.0}
-                            max={100.0}
-                            step="0.1"
-                            on:change={updateColorInput}
-                        />
-                    </label>
 
-                    <label class="colorslider">
-                        X chroma tweak
-                        <input
+                    </label>
+                </div>
+                    <div class="inputs secondary" 
+                    >
+                    <label class="adjustment">
+                        X lightness tweak
+                        <!-- <input
                             type="range"
-                            id="colorC"
-                            bind:value={shiftCValue}
+                            id="colorL"
+                            bind:value={shiftLValue}
                             min={-100.0}
                             max={100.0}
                             on:change={updateColorInput}
-                        />
+                        /> -->
                         <input
+                        style="width:4em"
                             type="number"
-                            id="colorC"
-                            bind:value={shiftCValue}
+                            id="colorL"
+                            bind:value={shiftLValue}
                             min={-100.0}
                             max={100.0}
                             step="0.1"
@@ -546,8 +573,32 @@ function paletteSwatchCallback(clickedSwatch) {
                     </label>
 
                     <label class="adjustment">
-                        Darken exponential (mix mode)
+                        X chroma tweak
+                        <!-- <input
+                            type="range"
+                            id="colorC"
+                            bind:value={shiftCValue}
+                            min={-100.0}
+                            max={100.0}
+                            on:change={updateColorInput}
+                        /> -->
                         <input
+                        style="width:4em"
+                            type="number"
+                            id="colorC"
+                            bind:value={shiftCValue}
+                            min={-100.0}
+                            max={100.0}
+                            step="0.1"
+                            on:change={updateColorInput}
+                        />
+                    </label>
+                </div>
+                <div class="divider"></div>
+                <div class="inputs secondary">
+                    <label class="adjustment">
+                        Darken exponential (mix mode)
+                        <input style="width:4em"
                             type="number"
                             id="darkenC"
                             bind:value={darkenCoeff}
@@ -558,7 +609,7 @@ function paletteSwatchCallback(clickedSwatch) {
                     </label>
                     <label class="adjustment">
                         Additional darken multiplier
-                        <input
+                        <input style="width:4em"
                             type="number"
                             id="darkenC"
                             bind:value={darkenBoost}
@@ -567,6 +618,7 @@ function paletteSwatchCallback(clickedSwatch) {
                             step="0.01"
                         />
                     </label>
+                </div>
                 </div>
             </div>
             <div class="column">
@@ -600,6 +652,7 @@ function paletteSwatchCallback(clickedSwatch) {
                 
                 <ColorSelector color={bivarPaletteLeft[editColorIndex].color} on:colorChange={colorSelectorCallback}
                 />
+
             
         </div>
             <div class="row">
@@ -649,12 +702,16 @@ function paletteSwatchCallback(clickedSwatch) {
                         </select></label
                     >
                     <MultivariatePalette
+                    id={'paletteRight'}
+
                         colorSeries={bivarPaletteRight}
                         {steps}
                         strokeSeries={bivarPaletteRightStroke}
                         {showStroke}
                         {paletteSize}
                         {paletteMargin}
+                        on:clickedSwatch={paletteSwatchCallback}
+
                     />
                 </div>
             </div>
@@ -715,7 +772,8 @@ function paletteSwatchCallback(clickedSwatch) {
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row" on:click={clickToCopySvg}>
+
                 <DemoMap
                     n={steps}
                     colors={bivarPaletteLeftColors}
@@ -846,8 +904,20 @@ function paletteSwatchCallback(clickedSwatch) {
         align-items: baseline;
     }
 
+    .introbutton{
+    margin: 0 0;
+    padding: 0.08em;
+    font-size: 0.9em;
+    }
+
     .inputs {
         font-size: 0.9rem;
+    }
+
+    .secondary{
+        font-size: .75rem;
+        display: grid;
+    grid-template-columns: 50% 1fr;
     }
 
     .adjustment {

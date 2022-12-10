@@ -25,7 +25,7 @@ function clickMe(e) {
     clickedSwatch = e.target.id
     let pos = [parentBounds.x, parentBounds.bottom ]
     console.log(pos)
-    dispatch('clickedSwatch', {id:clickedSwatch, pos:pos});
+    dispatch('clickedSwatch', {id:clickedSwatch, pos:pos, paletteId:id});
 
 }
 </script>
@@ -33,8 +33,8 @@ function clickMe(e) {
 
 <svg id={id}
                             width={paletteSize + paletteMargin * 2}
-                            height={paletteSize + paletteMargin * 2}
-                        >
+                            height={paletteSize + paletteMargin * 2+25}
+                        ><g transform="translate(-15, {-((paletteSize)/(steps*steps))*1.75+paletteMargin})">
                             <g
                                 transform={"rotate(45)"}
                                 transform-origin={"center center"}
@@ -45,8 +45,8 @@ function clickMe(e) {
                                         <rect on:click={clickMe}
                                         id={i + '-swatch'}
                                             fill={entry.color}
-                                            x={entry.x + paletteMargin}
-                                            y={entry.y + paletteMargin}
+                                            x={entry.x +paletteMargin}
+                                            y={entry.y+ +paletteMargin}
                                             width={paletteSize / steps}
                                             height={paletteSize / steps}
                                             stroke={strokeSeries[i].c_out}
@@ -84,10 +84,19 @@ function clickMe(e) {
                                         >
                                             {entry.key}
                                         </text>
+                                        {#if entry.key.split('-')[0] ===`${steps}` && entry.key.split('-')[1] === '1' }
+                                        <text x={-60} y={5}>Y</text>
+                                        {/if}
+                                        {#if entry.key.split('-')[1] ===`${steps}` && entry.key.split('-')[0] === '1' }
+                                        <text x={50} y={5}>X</text>
+                                        {/if}
+                                        {#if entry.key === '1-1' }
+                                        <text x={0} y={60} text-anchor="middle">low</text>
+                                        {/if}
                                     </g>
                                 </g>
                                 {/each}
-                            </g>
+                            </g></g>
                         </svg>
 <style
 >
