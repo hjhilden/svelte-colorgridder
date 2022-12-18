@@ -1,4 +1,4 @@
-<div class="intro">This app was created by Jonatan Hildén as part of a Master’s Thesis in Art and Media for Aalto University.
+<div class="intro">This app was created by Jonatan Hildén as part of a Master’s Thesis in Visual Communication Design for Aalto University.
 
 Color schemes can be used with the R package <a href="https://github.com/chris-prener/biscale">biscale</a> or the <a href="https://observablehq.com/@d3/bivariate-choropleth">Bivariate choropleth example</a> on Observable. 
 
