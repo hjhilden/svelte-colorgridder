@@ -480,7 +480,7 @@ function paletteSwatchCallback(clickedSwatch) {
             <div class="column">
                 <div class="colorbuttons">
                     {#each inputcolorsParsed as codeX, j}
-                        <label>
+                        <label style='width:8rem;'>
                             <span class="annotation">{colorLabels[j]}</span>
                             <button
                                 id={j.toString()}
@@ -898,6 +898,16 @@ function paletteSwatchCallback(clickedSwatch) {
         justify-content: left;
     }
 
+
+    @media screen and (max-width: 1300px) {
+
+        .column_box {
+display: flex;
+flex-wrap: wrap;
+
+    }
+    }
+
     .column_header {
         grid-column-start: span 3;
         margin-bottom: 0.5;
@@ -948,6 +958,7 @@ function paletteSwatchCallback(clickedSwatch) {
 
     .colorbuttons {
         display: flex;
+        max-width: 19rem;
     }
 
     .copybutton {
