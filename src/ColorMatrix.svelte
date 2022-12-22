@@ -452,7 +452,8 @@ function paletteSwatchCallback(clickedSwatch) {
         style="background-color:{inputcolorsParsed[2]}; color:{invertTextColor(
             'black',
             inputcolorsParsed[2]
-        )}">{inputcolorsParsed[2]}</button>, by rotating the hue angle of color Y {shiftHueValue}° using the <a href="https://hclwizard.org/why-hcl/" target="blank"> Hue-Chroma-Lightness (HCL)</a> color mode. The remaining colors are created based on this.
+        )}">{inputcolorsParsed[2]}</button>, by rotating the hue angle of color Y {shiftHueValue}° using the <a href="https://hclwizard.org/why-hcl/" target="blank"> Hue-Chroma-Lightness (HCL)</a> color mode. The remaining colors are created based on this. Individual colors in the left column can be changed by clicking the palette visualization.<br> 
+        <span style="font-size:0.8em">NB! This is a prototype tool with known (and unknown) bugs. Use in full-screen on desktop. Refresh if it crashes.</span>
     </div>
         <div class="column_box">
             <div class="column_header">

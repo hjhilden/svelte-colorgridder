@@ -2,7 +2,7 @@
 # Svelte colorgridder
 
 
-This app was created by Jonatan Hildén as part of a Master’s Thesis in Art and Media for Aalto University.
+This app was created by Jonatan Hildén as part of a Master’s Thesis in Visual Communication Design for Aalto University.
 
 It has two modes: **Contrast grid** and **Bivariate hue blender**
 
@@ -50,7 +50,7 @@ If you're using [Visual Studio Code](https://code.visualstudio.com/) we recommen
 
 ## Building and running in production mode
 
-To create an optimised version of the app:
+To create an optimized version of the app:
 
 ```bash
 npm run build
