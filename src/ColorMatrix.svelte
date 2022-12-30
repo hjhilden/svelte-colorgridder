@@ -898,7 +898,6 @@ function paletteSwatchCallback(clickedSwatch) {
         justify-content: left;
     }
 
-
     @media screen and (max-width: 1300px) {
 
         .column_box {
